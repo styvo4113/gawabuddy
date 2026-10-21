@@ -19,7 +19,6 @@ const ordinal = (n: number) => {
 
 const SELECT = 'rounded-lg border border-[#CFC8B0] bg-white px-3 py-2 text-sm text-[#1F2937] outline-none focus:border-[#D4A017] dark:border-[#243b30] dark:bg-[#0c1b16] dark:text-white'
 
-// Custom Toggle Switch
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
@@ -31,11 +30,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
         checked ? 'bg-[#4ADE80]' : 'bg-gray-300 dark:bg-gray-600'
       }`}
     >
-      <span
-        className={`pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform ${
-          checked ? 'translate-x-5' : 'translate-x-1'
-        }`}
-      />
+      <span className={`pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform ${checked ? 'translate-x-5' : 'translate-x-1'}`} />
     </button>
   )
 }
@@ -81,7 +76,6 @@ export default function Settings() {
   const pinOn = usePinEnabled()
   const [pinMode, setPinMode] = useState<PinMode | null>(null)
 
-  // Smart Savings Hooks
   const { data: profile } = useProfile()
   const updateProfile = useUpdateProfile()
 
@@ -102,11 +96,7 @@ export default function Settings() {
       <h1 className="text-base font-semibold text-[#0B3D2E] dark:text-white">Settings</h1>
 
       <Section title="Account">
-        <LinkRow 
-          to="/profile" 
-          title="Profile" 
-          hint="Manage your name, photo and personal details." 
-        />
+        <LinkRow to="/profile" title="Profile" hint="Manage your name, photo and personal details." />
       </Section>
 
       <Section title="General">
@@ -127,42 +117,39 @@ export default function Settings() {
         <LinkRow to="/settings/accounts" title="Accounts" hint="Add, rename or remove accounts." />
       </Section>
 
-      {/* NEW SMART SAVINGS SECTION */}
-      <Section title="Smart Savings">
-        <Row 
-          title="Auto-save percentage" 
-          hint="Default percentage to move to savings when you add income."
-        >
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              min="0"
-              max="100"
-              value={profile?.auto_save_percentage ?? 20}
-              onChange={(e) => {
-                const val = Math.min(100, Math.max(0, Number(e.target.value)))
-                updateProfile.mutate({ auto_save_percentage: val }, {
-                  onSuccess: () => toast.success('Percentage updated'),
-                  onError: () => toast.error('Could not save percentage')
-                })
-              }}
-              className="w-16 rounded-lg border border-[#CFC8B0] bg-white px-2 py-1 text-center text-sm text-[#1F2937] outline-none focus:border-[#D4A017] dark:border-[#243b30] dark:bg-[#0c1b16] dark:text-white"
-            />
-            <span className="text-sm font-bold text-[#6B7280] dark:text-[#A9B8AF]">%</span>
-          </div>
-        </Row>
-        <Row 
-          title="Enable auto-save" 
-          hint="Turn this on to automatically split income when you add it."
-        >
+      <Section title="Smart Savings Split">
+        <Row title="Enable auto-split" hint="Automatically move a percentage of every income to your savings account.">
           <Toggle 
             checked={profile?.auto_save_enabled ?? false} 
-            onChange={(v) => updateProfile.mutate({ auto_save_enabled: v }, {
-              onSuccess: () => toast.success(v ? 'Auto-save turned on' : 'Auto-save turned off'),
-              onError: () => toast.error('Could not save setting')
-            })} 
+            onChange={(v) => updateProfile.mutate({ auto_save_enabled: v })} 
           />
         </Row>
+        <div className="py-3">
+          <p className="text-sm font-medium text-[#1F2937] dark:text-white mb-2">Income Split Percentages</p>
+          <div className="flex gap-2">
+            <label className="flex-1">
+              <span className="text-xs text-[#6B7280] dark:text-[#A9B8AF]">Needs</span>
+              <div className="flex items-center gap-1 mt-1">
+                <input type="number" value={profile?.split_needs_pct ?? 50} onChange={(e) => updateProfile.mutate({ split_needs_pct: Number(e.target.value) })} className="w-full rounded-lg border border-[#CFC8B0] bg-white px-2 py-1 text-center text-sm dark:border-[#243b30] dark:bg-[#0c1b16] dark:text-white" />
+                <span className="text-xs text-[#6B7280]">%</span>
+              </div>
+            </label>
+            <label className="flex-1">
+              <span className="text-xs text-[#6B7280] dark:text-[#A9B8AF]">Wants</span>
+              <div className="flex items-center gap-1 mt-1">
+                <input type="number" value={profile?.split_wants_pct ?? 30} onChange={(e) => updateProfile.mutate({ split_wants_pct: Number(e.target.value) })} className="w-full rounded-lg border border-[#CFC8B0] bg-white px-2 py-1 text-center text-sm dark:border-[#243b30] dark:bg-[#0c1b16] dark:text-white" />
+                <span className="text-xs text-[#6B7280]">%</span>
+              </div>
+            </label>
+            <label className="flex-1">
+              <span className="text-xs text-[#6B7280] dark:text-[#A9B8AF]">Savings</span>
+              <div className="flex items-center gap-1 mt-1">
+                <input type="number" value={profile?.split_savings_pct ?? 20} onChange={(e) => updateProfile.mutate({ split_savings_pct: Number(e.target.value) })} className="w-full rounded-lg border border-[#CFC8B0] bg-white px-2 py-1 text-center text-sm dark:border-[#243b30] dark:bg-[#0c1b16] dark:text-white" />
+                <span className="text-xs text-[#6B7280]">%</span>
+              </div>
+            </label>
+          </div>
+        </div>
       </Section>
 
       <Section title="Appearance">

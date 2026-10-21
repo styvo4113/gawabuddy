@@ -1,4 +1,4 @@
-import { LayoutDashboard, Receipt, PieChart, Target, Compass, CalendarClock, BarChart3, Settings, type LucideIcon } from 'lucide-react'
+import { LayoutDashboard, Receipt, PieChart, Target, Compass, CalendarClock, BarChart3, Settings, User, type LucideIcon } from 'lucide-react'
 
 export type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean }
 

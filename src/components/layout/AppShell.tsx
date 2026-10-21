@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useLocation, Outlet } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
 import { AddMenuSheet, AddType, TransactionAddType } from '@/components/AddMenuSheet'
 import { AddGoalSheet } from '@/components/savings/AddGoalSheet'
 import { AddDebtSheet } from '@/components/debts/AddDebtSheet'
@@ -21,38 +21,32 @@ export default function AppShell() {
   const [futureOpen, setFutureOpen] = useState(false)
   const [billOpen, setBillOpen] = useState(false)
   const [quickAdd, setQuickAdd] = useState<{ open: boolean; type: TransactionAddType }>({ open: false, type: 'expense' })
-  
-  const { pathname, search } = useLocation()
-  const onWishList = pathname === '/goals' && new URLSearchParams(search).get('tab') === 'wishlist'
-  
-  // Hide the + button on settings and manage pages
-  const hideFab = pathname.startsWith('/settings') || pathname === '/profile' || pathname === '/more'
 
   return (
     <PinGate>
       <SettingsSync>
         <div className="flex min-h-screen bg-[#F8F5EC] text-[#1F2937] dark:bg-[#031310] dark:text-[#F5F8F7]">
-          
           <OfflineBanner />
 
-          <div className="hidden lg:block">
+          {/* Desktop Sidebar */}
+          <div className="hidden md:block">
             <Sidebar />
           </div>
 
-          <div className="flex flex-1 flex-col lg:pl-64">
-            <div className="lg:hidden">
+          {/* Main Content */}
+          <div className="flex flex-1 flex-col md:pl-64">
+            {/* Mobile Top Navigation */}
+            <div className="md:hidden">
               <TopNav />
             </div>
             
-            <main className="flex-1 pb-24">
+            <main className="flex-1 pb-24 md:pb-0">
               <Outlet />
             </main>
           </div>
 
-          {/* Only show + button if not on a settings/manage page */}
-          {!hideFab && (
-            <FloatingAddButton onClick={() => (onWishList ? setFutureOpen(true) : setMenuOpen(true))} />
-          )}
+          {/* Floating Add Button (Mobile only) */}
+          <FloatingAddButton onClick={() => setMenuOpen(true)} />
           
           <AddMenuSheet open={menuOpen} onOpenChange={setMenuOpen} onPick={(type: AddType) => {
             setMenuOpen(false)

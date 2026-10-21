@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Plus, Minus, Target, Wallet, PieChart, TrendingUp, ChevronDown, Leaf } from 'lucide-react'
+import { ArrowRight, Plus, Minus, Target, Wallet, PieChart, TrendingUp, ChevronDown, Leaf, AlertTriangle } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useProfile } from '@/hooks/useProfile'
 import { useTransactions } from '@/hooks/useTransactions'
@@ -49,6 +49,10 @@ export default function Dashboard() {
   const incomeVal = totals?.income ?? 0
   const spentVal = totals?.spent ?? 0
   const remainingVal = incomeVal - spentVal
+
+  // Check if budget is exceeded
+  const isOverBudget = budgetTotal.hasBudget && budgetTotal.pct > 100
+  const overspentAmount = budgetTotal.spent - budgetTotal.available
 
   return (
     <div className={`min-h-screen ${bgMain} p-4 md:p-8 font-sans`}>
@@ -155,16 +159,38 @@ export default function Dashboard() {
             {/* Budget Health */}
             <div className={`rounded-2xl p-5 shadow-sm ${cardBg} flex flex-col justify-between`}>
               <div>
-                <h2 className={`text-sm font-bold ${textMain}`}>Budget Health</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className={`text-sm font-bold ${textMain}`}>Budget Health</h2>
+                  {isOverBudget && (
+                    <span className="flex items-center gap-1 rounded-full bg-[#C0392B]/10 px-2 py-1 text-xs font-bold text-[#C0392B]">
+                      <AlertTriangle size={12} /> Over Budget!
+                    </span>
+                  )}
+                </div>
                 <p className={`mt-2 text-xs ${textMuted}`}>
                   {budgetTotal.hasBudget 
                     ? `${formatMoney(budgetTotal.spent)} spent of ${formatMoney(budgetTotal.available)} budgeted`
                     : 'No budget set for this month.'}
                 </p>
+                
+                {/* Progress Bar */}
                 <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[#E9E4D4] dark:bg-[#163C35]">
-                  <div className="h-full rounded-full bg-[#1E8E3E] dark:bg-[#4ADE80]" style={{ width: `${Math.min(100, budgetTotal.pct)}%` }} />
+                  <div 
+                    className={`h-full rounded-full ${isOverBudget ? 'bg-[#C0392B]' : 'bg-[#1E8E3E] dark:bg-[#4ADE80]'}`} 
+                    style={{ width: `${Math.min(100, budgetTotal.pct)}%` }} 
+                  />
                 </div>
-                <p className={`mt-1 text-right text-xs font-bold ${brightGreen}`}>{Math.floor(budgetTotal.pct)}%</p>
+                
+                {/* Percentage / Overspent Text */}
+                {isOverBudget ? (
+                  <p className="mt-1 text-right text-xs font-bold text-[#C0392B]">
+                    Over by {formatMoney(overspentAmount)}
+                  </p>
+                ) : (
+                  <p className={`mt-1 text-right text-xs font-bold ${brightGreen}`}>
+                    {Math.floor(budgetTotal.pct)}%
+                  </p>
+                )}
               </div>
               
               <div className="mt-6 flex items-center gap-4">

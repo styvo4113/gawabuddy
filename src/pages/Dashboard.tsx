@@ -67,14 +67,14 @@ export default function Dashboard() {
               </button>
               
               <button 
-                onClick={() => {
-                  const fab = document.querySelector('[aria-label="Add"]') as HTMLButtonElement;
-                  if (fab) fab.click();
-                }}
-                className="flex items-center gap-2 rounded-xl bg-[#1E8E3E] dark:bg-[#4ADE80] px-4 py-2 text-sm font-bold text-white dark:text-[#031310] shadow-sm hover:opacity-90"
-              >
-                <Plus size={16} /> Add
-              </button>
+  onClick={() => {
+    const fab = document.querySelector('[aria-label="Add"]') as HTMLButtonElement;
+    if (fab) fab.click();
+  }}
+  className="hidden md:flex items-center gap-2 rounded-xl bg-[#1E8E3E] dark:bg-[#4ADE80] px-4 py-2 text-sm font-bold text-white dark:text-[#031310] shadow-sm hover:opacity-90"
+>
+  <Plus size={16} /> Add
+</button>
             </div>
           </div>
 

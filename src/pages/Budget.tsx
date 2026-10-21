@@ -81,7 +81,7 @@ export default function Budget() {
         </>
       )}
       
-      <ApplyPlanDialog 
+          <ApplyPlanDialog 
         open={planOpen} 
         onOpenChange={setPlanOpen} 
         monthLabel={monthLabel(month)} 
@@ -93,6 +93,9 @@ export default function Budget() {
           needs: profile?.split_needs_pct ?? 50,
           wants: profile?.split_wants_pct ?? 30,
           savings: profile?.split_savings_pct ?? 20,
+          debt: 0, // If you have a debt percentage field, add it here
+          tithe: profile?.split_tithe_pct ?? 10,
+          emergency: profile?.split_emergency_pct ?? 10,
         }}
         pinRequired={pinOn}
       />

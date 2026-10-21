@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { formatMoney } from '@/lib/money'
-import { GROUPS, PLAN_SPLIT, buildPlan, parseAmountToCents } from '@/lib/budgetMath'
+import { GROUPS, buildPlan, parseAmountToCents, GroupKey } from '@/lib/budgetMath'
 import { verifyPin } from '@/lib/pin'
 import type { BudgetLine, BudgetSave } from '@/hooks/useBudget'
 
@@ -13,7 +13,7 @@ type Props = {
   saving: boolean
   onApply: (rows: BudgetSave[]) => void
   defaultIncome: number
-  defaultSplit: { needs: number; wants: number; savings: number }
+  defaultSplit: Record<GroupKey, number>
   pinRequired: boolean
 }
 
@@ -65,7 +65,7 @@ function PlanPreview({
   onApply: (rows: BudgetSave[]) => void; 
   onCancel: () => void;
   defaultIncome: number;
-  defaultSplit: { needs: number; wants: number; savings: number };
+  defaultSplit: Record<GroupKey, number>;
   pinRequired: boolean;
 }) {
   const [income, setIncome] = useState(defaultIncome > 0 ? String(defaultIncome / 100) : '')
@@ -76,45 +76,7 @@ function PlanPreview({
   const byId = useMemo(() => new Map(lines.map((l) => [l.categoryId, l])), [lines])
   
   const plan = useMemo(() => {
-    const splitTotal = defaultSplit.needs + defaultSplit.wants + defaultSplit.savings
-    if (splitTotal !== 100) {
-      // If user's split is invalid, fall back to default 50/30/20
-      return buildPlan(incomeCents, lines.map((l) => ({ id: l.categoryId, group: l.group })))
-    }
-
-    // Custom build plan based on user's split
-    const result = { lines: [] as any[], groupTotals: {} as any, unallocated: 0 }
-    let allocated = 0
-    const splitMap: Record<string, number> = {
-      needs: defaultSplit.needs,
-      wants: defaultSplit.wants,
-      savings: defaultSplit.savings,
-      debt: 0, // Add debt if they have it
-    }
-
-    for (const g of GROUPS) {
-      const members = lines.filter((l) => l.group === g.key)
-      if (members.length === 0) continue
-      
-      const pct = splitMap[g.key] ?? 0
-      const groupCents = Math.floor((incomeCents * pct) / 100)
-      const units = Math.floor(groupCents / 100)
-      const baseUnits = Math.floor(units / members.length)
-      const remUnits = units - baseUnits * members.length
-      
-      members.forEach((c, i) => {
-        result.lines.push({
-          categoryId: c.categoryId,
-          group: g.key,
-          cents: (baseUnits + (i < remUnits ? 1 : 0)) * 100,
-        })
-      })
-      result.groupTotals[g.key] = units * 100
-      allocated += units * 100
-    }
-    
-    result.unallocated = incomeCents - allocated
-    return result
+    return buildPlan(incomeCents, lines.map((l) => ({ id: l.categoryId, group: l.group })), defaultSplit)
   }, [incomeCents, lines, defaultSplit])
 
   const canSave = incomeCents > 0 && plan.lines.length > 0 && (!pinRequired || (showPin && pin.length >= 4))
@@ -156,7 +118,7 @@ function PlanPreview({
       {incomeCents > 0 && (
         <div className="rounded-lg bg-[#F8F5EC] p-3 text-sm text-[#374151] dark:bg-[#0c1b16] dark:text-[#dad5c3]">
           <p className="font-semibold text-[#0B3D2E] dark:text-white">Your Split:</p>
-          <p>Needs: {defaultSplit.needs}% · Wants: {defaultSplit.wants}% · Savings: {defaultSplit.savings}%</p>
+          <p>Needs: {defaultSplit.needs}% · Wants: {defaultSplit.wants}% · Savings: {defaultSplit.savings}% · Tithe: {defaultSplit.tithe}% · Emergency: {defaultSplit.emergency}%</p>
         </div>
       )}
 

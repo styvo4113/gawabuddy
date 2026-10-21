@@ -122,6 +122,7 @@ export type PlanLine = { categoryId: string; group: GroupKey; cents: number }
 export function buildPlan(
   incomeCents: number,
   cats: { id: string; group: GroupKey }[],
+  customSplit?: Record<GroupKey, number>
 ) {
   const lines: PlanLine[] = []
   const groupTotals: Record<GroupKey, number> = {
@@ -132,10 +133,15 @@ export function buildPlan(
   for (const g of GROUPS) {
     const members = cats.filter((c) => c.group === g.key)
     if (members.length === 0) continue
-    const groupCents = Math.floor((incomeCents * PLAN_SPLIT[g.key]) / 100)
+    
+    // Use the custom split if provided, otherwise fallback to the default
+    const pct = customSplit ? (customSplit[g.key] ?? 0) : PLAN_SPLIT[g.key]
+    
+    const groupCents = Math.floor((incomeCents * pct) / 100)
     const units = Math.floor(groupCents / 100)
     const baseUnits = Math.floor(units / members.length)
     const remUnits = units - baseUnits * members.length
+    
     members.forEach((c, i) => {
       lines.push({
         categoryId: c.id,

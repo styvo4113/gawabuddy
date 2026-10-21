@@ -39,7 +39,6 @@ export default function Dashboard() {
   const accountName = new Map(accounts.map((a) => [a.id, a.name]))
   const categoryById = new Map(categories.map((c) => [c.id, c]))
 
-  // Dynamic Colors for Light & Dark Mode
   const bgMain = "bg-[#F8F5EC] dark:bg-[#031310]"
   const cardBg = "bg-white border border-[#EFEAD8] dark:bg-[#061F1B] dark:border-[#163C35]"
   const textMuted = "text-[#6B7280] dark:text-[#9FB5B0]"
@@ -50,9 +49,16 @@ export default function Dashboard() {
   const spentVal = totals?.spent ?? 0
   const remainingVal = incomeVal - spentVal
 
-  // Check if budget is exceeded
   const isOverBudget = budgetTotal.hasBudget && budgetTotal.pct > 100
   const overspentAmount = budgetTotal.spent - budgetTotal.available
+
+  // Define the cards with their destination links
+  const topCards = [
+    { label: 'Total Income', val: incomeVal, icon: Wallet, color: 'text-[#1E8E3E] dark:text-[#4ADE80]', bg: 'bg-[#1E8E3E]/10 dark:bg-[#4ADE80]/10', to: '/transactions' },
+    { label: 'Total Spent', val: spentVal, icon: PieChart, color: 'text-[#C0392B]', bg: 'bg-[#C0392B]/10', to: '/transactions' },
+    { label: 'Remaining', val: remainingVal, icon: TrendingUp, color: 'text-[#3B82F6]', bg: 'bg-[#3B82F6]/10', to: '/budgets' },
+    { label: 'Total Savings', val: totalSavings, icon: Target, color: 'text-[#A855F7]', bg: 'bg-[#A855F7]/10', to: '/goals' },
+  ]
 
   return (
     <div className={`min-h-screen ${bgMain} p-4 md:p-8 font-sans`}>
@@ -84,25 +90,24 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* 4 Top Cards */}
+          {/* 4 Top Cards - Now Clickable */}
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            {[
-              { label: 'Total Income', val: incomeVal, icon: Wallet, color: 'text-[#1E8E3E] dark:text-[#4ADE80]', bg: 'bg-[#1E8E3E]/10 dark:bg-[#4ADE80]/10' },
-              { label: 'Total Spent', val: spentVal, icon: PieChart, color: 'text-[#C0392B]', bg: 'bg-[#C0392B]/10' },
-              { label: 'Remaining', val: remainingVal, icon: TrendingUp, color: 'text-[#3B82F6]', bg: 'bg-[#3B82F6]/10' },
-              { label: 'Total Savings', val: totalSavings, icon: Target, color: 'text-[#A855F7]', bg: 'bg-[#A855F7]/10' },
-            ].map((c) => (
-              <div key={c.label} className={`rounded-2xl p-4 shadow-sm ${cardBg}`}>
+            {topCards.map((c) => (
+              <Link 
+                key={c.label} 
+                to={c.to}
+                className={`group rounded-2xl p-4 shadow-sm transition-all hover:scale-[1.02] ${cardBg}`}
+              >
                 <div className="flex items-center justify-between">
                   <div className={`rounded-lg p-2 ${c.bg} ${c.color}`}><c.icon size={18} /></div>
-                  <ArrowRight size={16} className={textMuted} />
+                  <ArrowRight size={16} className={`${textMuted} transition-transform group-hover:translate-x-1`} />
                 </div>
                 <p className={`mt-3 text-xs font-medium ${textMuted}`}>{c.label}</p>
                 <p className={`text-lg font-bold ${textMain}`}>{formatMoney(c.val)}</p>
                 <p className={`mt-1 text-xs font-medium ${textMuted}`}>
                   {c.label === 'Total Savings' ? 'Across all goals' : 'This month'}
                 </p>
-              </div>
+              </Link>
             ))}
           </div>
 
@@ -117,26 +122,15 @@ export default function Dashboard() {
             </div>
             <div className="mt-4 h-56 w-full">
               {chartLoading ? (
-                <div className="flex h-full items-center justify-center">
-                  <p className={`text-sm ${textMuted}`}>Loading chart data...</p>
-                </div>
+                <div className="flex h-full items-center justify-center"><p className={`text-sm ${textMuted}`}>Loading chart data...</p></div>
               ) : chartData.length === 0 || chartData.every((d) => d.income === 0 && d.spending === 0) ? (
-                <div className="flex h-full flex-col items-center justify-center">
-                  <p className={`text-sm font-semibold ${textMain}`}>No data for the last 6 months</p>
-                  <p className={`mt-1 text-xs ${textMuted}`}>Add some transactions to see your chart.</p>
-                </div>
+                <div className="flex h-full flex-col items-center justify-center"><p className={`text-sm font-semibold ${textMain}`}>No data for the last 6 months</p><p className={`mt-1 text-xs ${textMuted}`}>Add some transactions to see your chart.</p></div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                     <defs>
-                      <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#1E8E3E" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#1E8E3E" stopOpacity={0}/>
-                      </linearGradient>
-                      <linearGradient id="colorSpending" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#D4A017" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#D4A017" stopOpacity={0}/>
-                      </linearGradient>
+                      <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#1E8E3E" stopOpacity={0.3}/><stop offset="95%" stopColor="#1E8E3E" stopOpacity={0}/></linearGradient>
+                      <linearGradient id="colorSpending" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#D4A017" stopOpacity={0.3}/><stop offset="95%" stopColor="#D4A017" stopOpacity={0}/></linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#EFEAD8" vertical={false} />
                     <XAxis dataKey="name" stroke="#6B7280" fontSize={12} tickLine={false} axisLine={false} />
@@ -152,86 +146,43 @@ export default function Dashboard() {
 
           {/* Charts Row: Spending Donut + Budget Health */}
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className={`rounded-2xl p-5 shadow-sm ${cardBg}`}>
-              <SpendingDonut from={from} to={to} />
-            </div>
+            <div className={`rounded-2xl p-5 shadow-sm ${cardBg}`}><SpendingDonut from={from} to={to} /></div>
 
-            {/* Budget Health */}
-            <div className={`rounded-2xl p-5 shadow-sm ${cardBg} flex flex-col justify-between`}>
+            {/* Budget Health - Now Clickable */}
+            <Link to="/budgets" className={`group rounded-2xl p-5 shadow-sm transition-all hover:scale-[1.01] ${cardBg} flex flex-col justify-between`}>
               <div>
                 <div className="flex items-center justify-between">
                   <h2 className={`text-sm font-bold ${textMain}`}>Budget Health</h2>
                   {isOverBudget && (
-                    <span className="flex items-center gap-1 rounded-full bg-[#C0392B]/10 px-2 py-1 text-xs font-bold text-[#C0392B]">
-                      <AlertTriangle size={12} /> Over Budget!
-                    </span>
+                    <span className="flex items-center gap-1 rounded-full bg-[#C0392B]/10 px-2 py-1 text-xs font-bold text-[#C0392B]"><AlertTriangle size={12} /> Over Budget!</span>
                   )}
+                  <ArrowRight size={16} className={`${textMuted} transition-transform group-hover:translate-x-1`} />
                 </div>
-                <p className={`mt-2 text-xs ${textMuted}`}>
-                  {budgetTotal.hasBudget 
-                    ? `${formatMoney(budgetTotal.spent)} spent of ${formatMoney(budgetTotal.available)} budgeted`
-                    : 'No budget set for this month.'}
-                </p>
-                
-                {/* Progress Bar */}
+                <p className={`mt-2 text-xs ${textMuted}`}>{budgetTotal.hasBudget ? `${formatMoney(budgetTotal.spent)} spent of ${formatMoney(budgetTotal.available)} budgeted` : 'No budget set for this month.'}</p>
                 <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[#E9E4D4] dark:bg-[#163C35]">
-                  <div 
-                    className={`h-full rounded-full ${isOverBudget ? 'bg-[#C0392B]' : 'bg-[#1E8E3E] dark:bg-[#4ADE80]'}`} 
-                    style={{ width: `${Math.min(100, budgetTotal.pct)}%` }} 
-                  />
+                  <div className={`h-full rounded-full ${isOverBudget ? 'bg-[#C0392B]' : 'bg-[#1E8E3E] dark:bg-[#4ADE80]'}`} style={{ width: `${Math.min(100, budgetTotal.pct)}%` }} />
                 </div>
-                
-                {/* Percentage / Overspent Text */}
-                {isOverBudget ? (
-                  <p className="mt-1 text-right text-xs font-bold text-[#C0392B]">
-                    Over by {formatMoney(overspentAmount)}
-                  </p>
-                ) : (
-                  <p className={`mt-1 text-right text-xs font-bold ${brightGreen}`}>
-                    {Math.floor(budgetTotal.pct)}%
-                  </p>
-                )}
+                {isOverBudget ? (<p className="mt-1 text-right text-xs font-bold text-[#C0392B]">Over by {formatMoney(overspentAmount)}</p>) : (<p className={`mt-1 text-right text-xs font-bold ${brightGreen}`}>{Math.floor(budgetTotal.pct)}%</p>)}
               </div>
-              
               <div className="mt-6 flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-[#E9E4D4] dark:border-[#163C35]">
-                  <span className={`text-xs font-bold ${textMuted}`}>
-                    {emergencyGoal ? Math.floor((emergencyGoal.saved_cents / emergencyGoal.target_cents) * 100) : 0}%
-                  </span>
-                </div>
-                <div>
-                  <p className={`text-sm font-bold ${textMain}`}>Emergency Fund</p>
-                  <p className={`text-xs ${textMuted}`}>
-                    {emergencyGoal 
-                      ? `${formatMoney(emergencyGoal.saved_cents)} of ${formatMoney(emergencyGoal.target_cents)}`
-                      : 'No emergency fund set.'}
-                  </p>
-                </div>
+                <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-[#E9E4D4] dark:border-[#163C35]"><span className={`text-xs font-bold ${textMuted}`}>{emergencyGoal ? Math.floor((emergencyGoal.saved_cents / emergencyGoal.target_cents) * 100) : 0}%</span></div>
+                <div><p className={`text-sm font-bold ${textMain}`}>Emergency Fund</p><p className={`text-xs ${textMuted}`}>{emergencyGoal ? `${formatMoney(emergencyGoal.saved_cents)} of ${formatMoney(emergencyGoal.target_cents)}` : 'No emergency fund set.'}</p></div>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
 
         {/* RIGHT SIDEBAR */}
         <div className="w-full space-y-6 lg:w-80">
-          
-          {/* Small steps widget */}
           <div className={`relative overflow-hidden rounded-2xl p-5 shadow-sm ${cardBg}`}>
-            <img 
-              src="/mountains.jpg" 
-              alt="Mountains" 
-              className="absolute inset-0 h-full w-full object-cover opacity-40" 
-            />
+            <img src="/mountains.jpg" alt="Mountains" className="absolute inset-0 h-full w-full object-cover opacity-40" />
             <div className="relative z-10">
-              <p className={`font-bold ${textMain}`}>Small steps.</p>
-              <p className="text-xl font-bold text-[#D4A017]">Big goals.</p>
+              <p className={`font-bold ${textMain}`}>Small steps.</p><p className="text-xl font-bold text-[#D4A017]">Big goals.</p>
               <p className={`mt-2 text-xs ${textMain}`}>Set your savings goal today and build the future you want.</p>
               <Link to="/goals" className="mt-4 inline-block rounded-xl bg-[#1E8E3E] dark:bg-[#4ADE80] px-4 py-2 text-xs font-bold text-white dark:text-[#031310]">Set a Goal →</Link>
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#061F1B] to-transparent z-0" />
           </div>
-
-          {/* Quick Actions */}
           <div className={`rounded-2xl p-5 shadow-sm ${cardBg}`}>
             <h2 className={`text-sm font-bold ${textMain}`}>Quick Actions</h2>
             <div className="mt-3 grid grid-cols-2 gap-2">
@@ -241,43 +192,17 @@ export default function Dashboard() {
               <Link to="/goals" className="flex items-center justify-center gap-2 rounded-xl bg-[#A855F7]/10 py-2.5 text-xs font-bold text-[#A855F7]"><Target size={14} /> Save Goal</Link>
             </div>
           </div>
-
-          {/* Recent Transactions */}
           <div className={`rounded-2xl p-5 shadow-sm ${cardBg}`}>
-            <div className="flex items-center justify-between">
-              <h2 className={`text-sm font-bold ${textMain}`}>Recent Transactions</h2>
-              <Link to="/transactions" className={`text-xs font-medium ${brightGreen} hover:underline`}>View all</Link>
-            </div>
+            <div className="flex items-center justify-between"><h2 className={`text-sm font-bold ${textMain}`}>Recent Transactions</h2><Link to="/transactions" className={`text-xs font-medium ${brightGreen} hover:underline`}>View all</Link></div>
             <ul className="mt-3 divide-y divide-[#F1ECDC] dark:divide-[#163C35]">
-              {recentTxs.length === 0 ? (
-                <p className={`py-4 text-center text-xs ${textMuted}`}>No recent transactions.</p>
-              ) : (
-                recentTxs.map((tx) => (
-                  <li key={tx.id}>
-                    <TransactionRow
-                      tx={tx}
-                      category={tx.category_id ? categoryById.get(tx.category_id) : undefined}
-                      accountName={accountName.get(tx.account_id) ?? 'Account'}
-                      toAccountName={tx.transfer_to_account_id ? accountName.get(tx.transfer_to_account_id) : undefined}
-                    />
-                  </li>
-                ))
+              {recentTxs.length === 0 ? (<p className={`py-4 text-center text-xs ${textMuted}`}>No recent transactions.</p>) : (
+                recentTxs.map((tx) => (<li key={tx.id}><TransactionRow tx={tx} category={tx.category_id ? categoryById.get(tx.category_id) : undefined} accountName={accountName.get(tx.account_id) ?? 'Account'} toAccountName={tx.transfer_to_account_id ? accountName.get(tx.transfer_to_account_id) : undefined} /></li>))
               )}
             </ul>
           </div>
-
-          {/* Grow your savings */}
           <div className={`rounded-2xl p-5 shadow-sm ${cardBg}`}>
-            <div className="flex items-center gap-3">
-              <Leaf size={24} className="text-[#1E8E3E] dark:text-[#4ADE80]" />
-              <div>
-                <p className={`text-sm font-bold ${textMain}`}>Grow your savings</p>
-                <p className={`text-xs ${textMuted}`}>Automate your savings and reach your goals faster.</p>
-              </div>
-            </div>
+            <div className="flex items-center gap-3"><Leaf size={24} className="text-[#1E8E3E] dark:text-[#4ADE80]" /><div><p className={`text-sm font-bold ${textMain}`}>Grow your savings</p><p className={`text-xs ${textMuted}`}>Automate your savings and reach your goals faster.</p></div></div>
           </div>
-
-          {/* Quote Card */}
           <QuoteCard />
         </div>
       </div>

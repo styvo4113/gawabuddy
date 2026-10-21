@@ -10,6 +10,7 @@ import { useMonthTotals } from '@/hooks/useDashboard'
 import { useChartData } from '@/hooks/useChartData'
 import { useSavingsGoals } from '@/hooks/useSavings'
 import { useBudget, summarize } from '@/hooks/useBudget'
+import { useIsDark } from '@/lib/theme'
 import { currentMonthKey, monthBounds } from '@/lib/budgetMath'
 import { formatMoney } from '@/lib/money'
 import { TransactionRow } from '@/components/transactions/TransactionRow'
@@ -22,6 +23,7 @@ export default function Dashboard() {
   const [selectedMonthKey, setSelectedMonthKey] = useState(currentMonthKey())
   const { from, to } = monthBounds(selectedMonthKey)
   const first = profile?.full_name.trim().split(' ')[0] || 'there'
+  const dark = useIsDark()
   
   const accounts = useAccounts().data ?? []
   const categories = useCategories().data ?? []
@@ -135,7 +137,15 @@ export default function Dashboard() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#EFEAD8" vertical={false} />
                     <XAxis dataKey="name" stroke="#6B7280" fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis stroke="#6B7280" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}k`} />
-                    <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #EFEAD8', borderRadius: '8px' }} itemStyle={{ color: '#1F2937' }} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: dark ? '#061F1B' : '#FFFFFF', 
+                        border: dark ? '1px solid #163C35' : '1px solid #EFEAD8', 
+                        borderRadius: '8px',
+                        color: dark ? '#F5F8F7' : '#1F2937'
+                      }} 
+                      itemStyle={{ color: dark ? '#F5F8F7' : '#1F2937' }}
+                    />
                     <Area type="monotone" dataKey="income" stroke="#1E8E3E" fillOpacity={1} fill="url(#colorIncome)" strokeWidth={2} />
                     <Area type="monotone" dataKey="spending" stroke="#D4A017" fillOpacity={1} fill="url(#colorSpending)" strokeWidth={2} />
                   </AreaChart>
@@ -206,7 +216,7 @@ export default function Dashboard() {
             </ul>
           </div>
           
-          {/* NEW Grow Your Savings Component */}
+          {/* Grow Your Savings Component */}
           <GrowYourSavings />
 
           <QuoteCard />

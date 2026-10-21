@@ -1,9 +1,9 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronRight, User } from 'lucide-react'
+import { ChevronRight, Save } from 'lucide-react'
 import { toast } from 'sonner'
 import { CURRENCIES, type CurrencyCode } from '@/lib/money'
-import { usePinEnabled } from '@/lib/pin'
+import { usePinEnabled, verifyPin } from '@/lib/pin'
 import { setTheme, useIsDark } from '@/lib/theme'
 import { DEFAULT_SETTINGS, useSaveSettings, useSettings } from '@/hooks/useSettings'
 import { PinSheet, type PinMode } from '@/components/security/PinSheet'
@@ -79,10 +79,56 @@ export default function Settings() {
   const { data: profile } = useProfile()
   const updateProfile = useUpdateProfile()
 
+  // Form State for Smart Savings
+  const [needs, setNeeds] = useState(profile?.split_needs_pct ?? 50)
+  const [wants, setWants] = useState(profile?.split_wants_pct ?? 30)
+  const [savings, setSavings] = useState(profile?.split_savings_pct ?? 20)
+  const [pinInput, setPinInput] = useState('')
+  const [showPinPrompt, setShowPinPrompt] = useState(false)
+
   function update(patch: Partial<typeof settings>, okMsg: string) {
     save.mutate({ ...settings, ...patch }, { 
       onSuccess: () => toast.success(okMsg), 
       onError: () => toast.error('Could not save that setting. Try again.') 
+    })
+  }
+
+  const total = needs + wants + savings
+  const isValidSplit = total === 100
+
+  async function handleSaveSplit() {
+    if (!isValidSplit) {
+      return toast.error(`Your split adds up to ${total}%. It must be exactly 100%.`)
+    }
+
+    // If PIN is enabled, ask for it
+    if (pinOn && !showPinPrompt) {
+      setShowPinPrompt(true)
+      return
+    }
+
+    // If PIN is enabled, verify the PIN
+    if (pinOn && showPinPrompt) {
+      const ok = await verifyPin(pinInput)
+      if (!ok) {
+        toast.error('Incorrect PIN.')
+        setPinInput('')
+        return
+      }
+    }
+
+    // Save to database
+    updateProfile.mutate({
+      split_needs_pct: needs,
+      split_wants_pct: wants,
+      split_savings_pct: savings,
+    }, {
+      onSuccess: () => {
+        toast.success('Smart Savings split updated')
+        setShowPinPrompt(false)
+        setPinInput('')
+      },
+      onError: () => toast.error('Could not save split'),
     })
   }
 
@@ -124,31 +170,59 @@ export default function Settings() {
             onChange={(v) => updateProfile.mutate({ auto_save_enabled: v })} 
           />
         </Row>
-        <div className="py-3">
-          <p className="text-sm font-medium text-[#1F2937] dark:text-white mb-2">Income Split Percentages</p>
+        
+        <div className="py-3 space-y-3">
           <div className="flex gap-2">
             <label className="flex-1">
               <span className="text-xs text-[#6B7280] dark:text-[#A9B8AF]">Needs</span>
               <div className="flex items-center gap-1 mt-1">
-                <input type="number" value={profile?.split_needs_pct ?? 50} onChange={(e) => updateProfile.mutate({ split_needs_pct: Number(e.target.value) })} className="w-full rounded-lg border border-[#CFC8B0] bg-white px-2 py-1 text-center text-sm dark:border-[#243b30] dark:bg-[#0c1b16] dark:text-white" />
+                <input type="number" value={needs} onChange={(e) => setNeeds(Number(e.target.value))} className="w-full rounded-lg border border-[#CFC8B0] bg-white px-2 py-1 text-center text-sm dark:border-[#243b30] dark:bg-[#0c1b16] dark:text-white" />
                 <span className="text-xs text-[#6B7280]">%</span>
               </div>
             </label>
             <label className="flex-1">
               <span className="text-xs text-[#6B7280] dark:text-[#A9B8AF]">Wants</span>
               <div className="flex items-center gap-1 mt-1">
-                <input type="number" value={profile?.split_wants_pct ?? 30} onChange={(e) => updateProfile.mutate({ split_wants_pct: Number(e.target.value) })} className="w-full rounded-lg border border-[#CFC8B0] bg-white px-2 py-1 text-center text-sm dark:border-[#243b30] dark:bg-[#0c1b16] dark:text-white" />
+                <input type="number" value={wants} onChange={(e) => setWants(Number(e.target.value))} className="w-full rounded-lg border border-[#CFC8B0] bg-white px-2 py-1 text-center text-sm dark:border-[#243b30] dark:bg-[#0c1b16] dark:text-white" />
                 <span className="text-xs text-[#6B7280]">%</span>
               </div>
             </label>
             <label className="flex-1">
               <span className="text-xs text-[#6B7280] dark:text-[#A9B8AF]">Savings</span>
               <div className="flex items-center gap-1 mt-1">
-                <input type="number" value={profile?.split_savings_pct ?? 20} onChange={(e) => updateProfile.mutate({ split_savings_pct: Number(e.target.value) })} className="w-full rounded-lg border border-[#CFC8B0] bg-white px-2 py-1 text-center text-sm dark:border-[#243b30] dark:bg-[#0c1b16] dark:text-white" />
+                <input type="number" value={savings} onChange={(e) => setSavings(Number(e.target.value))} className="w-full rounded-lg border border-[#CFC8B0] bg-white px-2 py-1 text-center text-sm dark:border-[#243b30] dark:bg-[#0c1b16] dark:text-white" />
                 <span className="text-xs text-[#6B7280]">%</span>
               </div>
             </label>
           </div>
+
+          <div className={`text-xs font-semibold ${isValidSplit ? 'text-[#1E8E3E]' : 'text-[#C0392B]'}`}>
+            Total: {total}% {!isValidSplit && '(Must be 100%)'}
+          </div>
+
+          {showPinPrompt && (
+            <div className="space-y-2 rounded-lg bg-[#F1ECDC] p-3 dark:bg-[#243b30]">
+              <p className="text-xs font-medium text-[#0B3D2E] dark:text-white">Enter your PIN to confirm this change:</p>
+              <input
+                type="password"
+                inputMode="numeric"
+                value={pinInput}
+                onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
+                placeholder="Enter PIN"
+                className="w-full rounded-lg border border-[#CFC8B0] bg-white px-3 py-2 text-center text-lg tracking-widest dark:border-[#243b30] dark:bg-[#0c1b16] dark:text-white"
+              />
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={handleSaveSplit}
+            disabled={!isValidSplit || updateProfile.isPending}
+            className="w-full rounded-xl bg-[#0B3D2E] py-2.5 text-sm font-bold text-white disabled:opacity-50 dark:bg-[#4ADE80] dark:text-[#031310]"
+          >
+            <Save size={16} className="inline mr-2" />
+            {updateProfile.isPending ? 'Saving...' : 'Save Split'}
+          </button>
         </div>
       </Section>
 

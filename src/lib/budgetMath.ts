@@ -26,6 +26,7 @@ export const LEVEL_COLOR: Record<Level, string> = {
   over: '#C0392B',
 }
 
+// THIS IS THE MISSING EXPORT
 let startDay = 1
 export const setMonthStartDay = (n: number) => { 
   startDay = Math.min(28, Math.max(1, Math.round(n) || 1)) 

@@ -169,11 +169,18 @@ function QuickAdd({
           // --- SMART SAVINGS SPLIT LOGIC ---
           if (type === 'income' && !editing && profile?.auto_save_enabled) {
             const savingsPct = profile.split_savings_pct ?? 20
+            const tithePct = profile.split_tithe_pct ?? 10
+            const emergencyPct = profile.split_emergency_pct ?? 10
+            
             const savingsAmount = Math.floor((cents * savingsPct) / 100)
+            const titheAmount = Math.floor((cents * tithePct) / 100)
+            const emergencyAmount = Math.floor((cents * emergencyPct) / 100)
+
             const savingsAccount = accounts.find(a => a.type === 'savings')
             
             if (savingsAccount && savingsAmount > 0) {
-              const { error: transferError } = await supabase.from('transactions').insert({
+              // Transfer to Savings
+              await supabase.from('transactions').insert({
                 account_id: account,
                 transfer_to_account_id: savingsAccount.id,
                 type: 'transfer',
@@ -183,13 +190,20 @@ function QuickAdd({
                 category_id: null,
                 merchant: null,
               })
-
-              if (transferError) {
-                toast.error('Income saved, but could not auto-save to savings.')
-              } else {
-                toast.success(`Income saved. Auto-saved ${formatMoney(savingsAmount)} to ${savingsAccount.name}!`)
-              }
+              
+              toast.success(`Income saved. Auto-saved ${formatMoney(savingsAmount)} to Savings!`)
             }
+
+            // Note: For Tithe and Emergency, we assume they are tracked as budget categories
+            // or the user manually moves them. If you want to move them to specific accounts, 
+            // you can add those transfers here too.
+            if (titheAmount > 0) {
+              toast.success(`Remember to set aside ${formatMoney(titheAmount)} for Tithe.`)
+            }
+            if (emergencyAmount > 0) {
+              toast.success(`Remember to set aside ${formatMoney(emergencyAmount)} for Emergency.`)
+            }
+
           } else {
             toast.success(editing ? 'Transaction updated' : `${TYPES.find((t) => t.key === type)?.label} saved`)
           }

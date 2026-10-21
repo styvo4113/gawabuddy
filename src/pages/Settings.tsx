@@ -83,6 +83,8 @@ export default function Settings() {
   const [needs, setNeeds] = useState(profile?.split_needs_pct ?? 50)
   const [wants, setWants] = useState(profile?.split_wants_pct ?? 30)
   const [savings, setSavings] = useState(profile?.split_savings_pct ?? 20)
+  const [tithe, setTithe] = useState(profile?.split_tithe_pct ?? 10)
+  const [emergency, setEmergency] = useState(profile?.split_emergency_pct ?? 10)
   const [pinInput, setPinInput] = useState('')
   const [showPinPrompt, setShowPinPrompt] = useState(false)
 
@@ -93,7 +95,7 @@ export default function Settings() {
     })
   }
 
-  const total = needs + wants + savings
+  const total = needs + wants + savings + tithe + emergency
   const isValidSplit = total === 100
 
   async function handleSaveSplit() {
@@ -101,13 +103,11 @@ export default function Settings() {
       return toast.error(`Your split adds up to ${total}%. It must be exactly 100%.`)
     }
 
-    // If PIN is enabled, ask for it
     if (pinOn && !showPinPrompt) {
       setShowPinPrompt(true)
       return
     }
 
-    // If PIN is enabled, verify the PIN
     if (pinOn && showPinPrompt) {
       const ok = await verifyPin(pinInput)
       if (!ok) {
@@ -117,11 +117,12 @@ export default function Settings() {
       }
     }
 
-    // Save to database
     updateProfile.mutate({
       split_needs_pct: needs,
       split_wants_pct: wants,
       split_savings_pct: savings,
+      split_tithe_pct: tithe,
+      split_emergency_pct: emergency,
     }, {
       onSuccess: () => {
         toast.success('Smart Savings split updated')
@@ -172,6 +173,8 @@ export default function Settings() {
         </Row>
         
         <div className="py-3 space-y-3">
+          <p className="text-xs font-medium text-[#6B7280] dark:text-[#A9B8AF]">Income Split Percentages</p>
+          
           <div className="flex gap-2">
             <label className="flex-1">
               <span className="text-xs text-[#6B7280] dark:text-[#A9B8AF]">Needs</span>
@@ -196,6 +199,23 @@ export default function Settings() {
             </label>
           </div>
 
+          <div className="flex gap-2 pt-2 border-t border-[#F1ECDC] dark:border-[#243b30]">
+            <label className="flex-1">
+              <span className="text-xs text-[#6B7280] dark:text-[#A9B8AF]">Tithe (10%)</span>
+              <div className="flex items-center gap-1 mt-1">
+                <input type="number" value={tithe} onChange={(e) => setTithe(Number(e.target.value))} className="w-full rounded-lg border border-[#CFC8B0] bg-white px-2 py-1 text-center text-sm dark:border-[#243b30] dark:bg-[#0c1b16] dark:text-white" />
+                <span className="text-xs text-[#6B7280]">%</span>
+              </div>
+            </label>
+            <label className="flex-1">
+              <span className="text-xs text-[#6B7280] dark:text-[#A9B8AF]">Emergency</span>
+              <div className="flex items-center gap-1 mt-1">
+                <input type="number" value={emergency} onChange={(e) => setEmergency(Number(e.target.value))} className="w-full rounded-lg border border-[#CFC8B0] bg-white px-2 py-1 text-center text-sm dark:border-[#243b30] dark:bg-[#0c1b16] dark:text-white" />
+                <span className="text-xs text-[#6B7280]">%</span>
+              </div>
+            </label>
+          </div>
+
           <div className={`text-xs font-semibold ${isValidSplit ? 'text-[#1E8E3E]' : 'text-[#C0392B]'}`}>
             Total: {total}% {!isValidSplit && '(Must be 100%)'}
           </div>
@@ -203,23 +223,11 @@ export default function Settings() {
           {showPinPrompt && (
             <div className="space-y-2 rounded-lg bg-[#F1ECDC] p-3 dark:bg-[#243b30]">
               <p className="text-xs font-medium text-[#0B3D2E] dark:text-white">Enter your PIN to confirm this change:</p>
-              <input
-                type="password"
-                inputMode="numeric"
-                value={pinInput}
-                onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
-                placeholder="Enter PIN"
-                className="w-full rounded-lg border border-[#CFC8B0] bg-white px-3 py-2 text-center text-lg tracking-widest dark:border-[#243b30] dark:bg-[#0c1b16] dark:text-white"
-              />
+              <input type="password" inputMode="numeric" value={pinInput} onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))} placeholder="Enter PIN" className="w-full rounded-lg border border-[#CFC8B0] bg-white px-3 py-2 text-center text-lg tracking-widest dark:border-[#243b30] dark:bg-[#0c1b16] dark:text-white" />
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={handleSaveSplit}
-            disabled={!isValidSplit || updateProfile.isPending}
-            className="w-full rounded-xl bg-[#0B3D2E] py-2.5 text-sm font-bold text-white disabled:opacity-50 dark:bg-[#4ADE80] dark:text-[#031310]"
-          >
+          <button type="button" onClick={handleSaveSplit} disabled={!isValidSplit || updateProfile.isPending} className="w-full rounded-xl bg-[#0B3D2E] py-2.5 text-sm font-bold text-white disabled:opacity-50 dark:bg-[#4ADE80] dark:text-[#031310]">
             <Save size={16} className="inline mr-2" />
             {updateProfile.isPending ? 'Saving...' : 'Save Split'}
           </button>

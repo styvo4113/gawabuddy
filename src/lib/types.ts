@@ -19,6 +19,8 @@ export type Profile = {
   split_needs_pct: number
   split_wants_pct: number
   split_savings_pct: number
+  split_tithe_pct: number
+  split_emergency_pct: number
 }
 
 export type Account = {

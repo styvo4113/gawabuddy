@@ -1,0 +1,192 @@
+/* ───────────────────────────────────────────────────────── */
+/* BASE STYLES (Light Theme Default)                         */
+/* ───────────────────────────────────────────────────────── */
+.dashboard-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px 32px;
+  overflow: hidden;
+  color: #1F2937;
+  background:
+    radial-gradient(
+      ellipse at 0% 100%,
+      rgba(30, 142, 62, 0.08),
+      transparent 45%
+    ),
+    linear-gradient(120deg, #ffffff, #F8F5EC);
+  border: 1px solid #EFEAD8;
+  border-radius: 22px;
+}
+
+.dashboard-welcome {
+  min-width: 0;
+}
+
+.welcome-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.welcome-title h1 {
+  margin: 0;
+  font-size: clamp(25px, 3vw, 36px);
+  font-weight: 800;
+  letter-spacing: -1.2px;
+}
+
+.welcome-title h1 span {
+  color: #1E8E3E; /* Brand Green */
+}
+
+.welcome-wave {
+  font-size: 25px;
+  animation: wave-animation 2.5s infinite;
+  transform-origin: 70% 70%;
+}
+
+@keyframes wave-animation {
+  0% { transform: rotate( 0.0deg) }
+  10% { transform: rotate(14.0deg) }
+  20% { transform: rotate(-8.0deg) }
+  30% { transform: rotate(14.0deg) }
+  40% { transform: rotate(-4.0deg) }
+  50% { transform: rotate(10.0deg) }
+  60% { transform: rotate( 0.0deg) }
+  100% { transform: rotate( 0.0deg) }
+}
+
+.welcome-tagline {
+  margin: 8px 0 0;
+  color: #6B7280;
+  font-size: 15px;
+  line-height: 1.5;
+  animation: tagline-enter 350ms ease both;
+}
+
+@keyframes tagline-enter {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dashboard-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.month-selector,
+.add-button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 18px;
+  border-radius: 13px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+
+.month-selector {
+  color: #1F2937;
+  background: #ffffff;
+  border: 1px solid #EFEAD8;
+}
+
+.month-selector:hover {
+  background: #F8F5EC;
+}
+
+.add-button {
+  color: #ffffff;
+  background: #1E8E3E;
+  border: 1px solid transparent;
+}
+
+.add-button:hover {
+  background: #187532;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(30, 142, 62, 0.2);
+}
+
+/* ───────────────────────────────────────────────────────── */
+/* DARK MODE OVERRIDES (.dark class on <html>)               */
+/* ───────────────────────────────────────────────────────── */
+.dark .dashboard-header {
+  color: #f5f7f6;
+  background:
+    radial-gradient(
+      ellipse at 0% 100%,
+      rgba(0, 180, 160, 0.09),
+      transparent 45%
+    ),
+    linear-gradient(120deg, #0b1915, #091a20);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dark .welcome-title h1 span {
+  color: #42df91;
+}
+
+.dark .welcome-tagline {
+  color: #a8bbb2;
+}
+
+.dark .month-selector {
+  color: #f1f7f4;
+  background: #132820;
+  border: 1px solid #294136;
+}
+
+.dark .month-selector:hover {
+  background: #1a352b;
+}
+
+.dark .add-button {
+  color: #062417;
+  background: #42df91;
+}
+
+.dark .add-button:hover {
+  background: #5aeba3;
+  box-shadow: 0 4px 12px rgba(66, 223, 145, 0.2);
+}
+
+/* ───────────────────────────────────────────────────────── */
+/* RESPONSIVE                                                */
+/* ───────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .dashboard-header {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 22px;
+  }
+
+  .dashboard-actions {
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .month-selector {
+    flex: 1;
+  }
+
+  .add-button {
+    min-width: 100px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-tagline, .welcome-wave {
+    animation: none;
+  }
+}

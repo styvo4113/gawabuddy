@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Plus, Minus, Target, Wallet, PieChart, TrendingUp, ChevronDown, AlertTriangle } from 'lucide-react'
+import { ArrowRight, Minus, Target, Wallet, PieChart, TrendingUp, AlertTriangle } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useProfile } from '@/hooks/useProfile'
 import { useTransactions } from '@/hooks/useTransactions'
@@ -16,6 +16,7 @@ import { TransactionRow } from '@/components/transactions/TransactionRow'
 import { SpendingDonut } from '@/components/dashboard/SpendingDonut'
 import { QuoteCard } from '@/components/dashboard/QuoteCard'
 import { GrowYourSavings } from '@/components/dashboard/GrowYourSavings'
+import DashboardHeader from '@/components/dashboard/DashboardHeader'
 
 // ─────────────────────────────────────────────────────────────
 // Savings commitment config
@@ -26,8 +27,7 @@ export default function Dashboard() {
   const { data: profile } = useProfile()
   const [selectedMonthKey, setSelectedMonthKey] = useState(currentMonthKey())
   const { from, to } = monthBounds(selectedMonthKey)
-  const first = profile?.full_name.trim().split(' ')[0] || 'there'
-
+  
   const accounts = useAccounts().data ?? []
   const categories = useCategories().data ?? []
   const recentTxs = useTransactions({ search: '', type: 'all', categoryId: '', accountId: '', from, to }).data?.pages[0]?.slice(0, 5) ?? []
@@ -56,14 +56,8 @@ export default function Dashboard() {
   // ───────────────────────────────────────────────────────────
   const incomeVal = totals?.income ?? 0
   const spentVal = totals?.spent ?? 0
-
-  // How much of this month's income MUST go to savings
   const reservedForSavings = Math.round(incomeVal * SAVINGS_RATE)
-
-  // What's actually safe to spend after reserving savings
   const safeToSpend = incomeVal - reservedForSavings
-
-  // True remaining = safe-to-spend minus actual spend
   const remainingVal = safeToSpend - spentVal
 
   const isOverspending = remainingVal < 0
@@ -79,7 +73,6 @@ export default function Dashboard() {
     { label: 'Left to Spend', val: remainingVal, icon: Target, color: 'text-[#A855F7]', bg: 'bg-[#A855F7]/10', to: '/goals' },
   ]
 
-  // Custom Tooltip component
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -104,28 +97,14 @@ export default function Dashboard() {
         {/* MAIN COLUMN */}
         <div className="flex-1 space-y-6">
 
-          {/* Header */}
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-            <div>
-              <h1 className={`text-2xl font-bold ${textMain}`}>Hello, {first} 👋</h1>
-              <p className={`text-sm ${textMuted}`}>Here's a quick look at your money.</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold ${cardBg} ${textMain}`}>
-                {selectedMonthKey.slice(0, 7)} <ChevronDown size={16} />
-              </button>
-
-              <button
-                onClick={() => {
-                  const fab = document.querySelector('[aria-label="Add"]') as HTMLButtonElement;
-                  if (fab) fab.click();
-                }}
-                className="hidden md:flex items-center gap-2 rounded-xl bg-[#1E8E3E] dark:bg-[#4ADE80] px-4 py-2 text-sm font-bold text-white dark:text-[#031310] shadow-sm hover:opacity-90"
-              >
-                <Plus size={16} /> Add
-              </button>
-            </div>
-          </div>
+          {/* NEW PREMIUM HEADER COMPONENT */}
+          <DashboardHeader 
+            selectedMonthKey={selectedMonthKey} 
+            onMonthClick={() => {
+              // If you build a custom date dropdown, trigger it here
+              console.log("Open month selector");
+            }} 
+          />
 
           {/* ⚠️ OVERSPEND WARNING BANNER */}
           {isOverspending && (
@@ -206,7 +185,6 @@ export default function Dashboard() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#EFEAD8" vertical={false} />
                     <XAxis dataKey="name" stroke="#6B7280" fontSize={12} tickLine={false} axisLine={false} />
                     
-                    {/* Y-Axis correctly formats 200,000 cents into 2k */}
                     <YAxis
                       stroke="#6B7280"
                       fontSize={12}

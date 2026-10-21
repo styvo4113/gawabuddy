@@ -52,14 +52,14 @@ export function Sidebar() {
       </div>
 
       {/* FULL-SIZE IMAGE EXPERIENCE */}
-      <div className="relative mt-auto h-64 w-full overflow-hidden rounded-2xl border border-[#163C35]">
+      <div className="relative mt-auto h-80 w-full overflow-hidden rounded-2xl border border-[#163C35]">
         <img 
           src="/sidebar-bg.jpg" 
           alt="Journey" 
-          className="absolute inset-0 h-full w-full object-cover object-center" 
+          className="absolute inset-0 h-full w-full object-cover object-bottom" 
         />
         {/* This gradient ensures the text is readable while showing the road */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#08130E] via-[#08130E]/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#08130E] via-[#08130E]/20 to-transparent" />
         
         <div className="absolute bottom-0 left-0 w-full p-5">
           <p className="text-sm font-medium text-white">Better Money.</p>

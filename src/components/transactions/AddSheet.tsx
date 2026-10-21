@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { MessageSquareText } from 'lucide-react'
+import { MessageSquareText, PiggyBank } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useAccounts } from '@/hooks/useAccounts'
 import { useCategories } from '@/hooks/useCategories'
+import { useProfile, useUpdateProfile } from '@/hooks/useProfile'
 import { useSaveTransaction } from '@/hooks/useTransactions'
 import { applyKey, centsToInput, displayAmount } from '@/lib/amountInput'
 import { formatDay, todayKey } from '@/lib/dates'
@@ -70,6 +71,8 @@ function QuickAdd({
 }) {
   const accountsQuery = useAccounts()
   const categories = useCategories().data ?? []
+  const { data: profile } = useProfile()
+  const updateProfile = useUpdateProfile()
   const save = useSaveTransaction()
   const queryClient = useQueryClient()
   
@@ -87,6 +90,10 @@ function QuickAdd({
   const [showDetails, setShowDetails] = useState(!!(editing?.merchant || editing?.note))
   const [showMpesa, setShowMpesa] = useState(false)
   const [banner, setBanner] = useState<{ fee: number | null; duplicate: boolean } | null>(null)
+
+  // Smart Savings State
+  const [autoSave, setAutoSave] = useState(profile?.auto_save_enabled ?? false)
+  const [autoSavePct, setAutoSavePct] = useState(profile?.auto_save_percentage ?? 20)
 
   useEffect(() => {
     if (!accountId && accounts.length > 0) {
@@ -138,7 +145,7 @@ function QuickAdd({
     setShowMpesa(false)
   }
 
-  function submit() {
+  async function submit() {
     const cents = toCents(amount)
     if (!cents) return toast.error('Enter an amount.')
     if (!account) return toast.error('No account found. Please set one up in Onboarding.')
@@ -162,12 +169,39 @@ function QuickAdd({
         transfer_to_account_id: type === 'transfer' ? toAccountId : null,
       },
       {
-        onSuccess: () => {
-          toast.success(editing ? 'Transaction updated' : `${TYPES.find((t) => t.key === type)?.label} saved`)
-          
-          // THIS IS THE FIX: Force the dashboard and charts to reload instantly
+        onSuccess: async () => {
+          // --- SMART SAVINGS LOGIC ---
+          if (type === 'income' && autoSave && autoSavePct > 0) {
+            // 1. Update the user's permanent preference in the database
+            updateProfile.mutate({ auto_save_enabled: true, auto_save_percentage: autoSavePct })
+
+            // 2. Move the money to a savings account
+            const savingsAmount = Math.floor((cents * autoSavePct) / 100)
+            const savingsAccount = accounts.find(a => a.type === 'savings')
+            
+            if (savingsAccount && savingsAmount > 0) {
+              const { error: transferError } = await supabase.from('transactions').insert({
+                account_id: account,
+                transfer_to_account_id: savingsAccount.id,
+                type: 'transfer',
+                amount_cents: savingsAmount,
+                date: date,
+                note: `Auto-saved ${autoSavePct}% of income`,
+                category_id: null,
+                merchant: null,
+              })
+
+              if (transferError) {
+                toast.error('Income saved, but could not auto-save to savings.')
+              } else {
+                toast.success(`Income saved. Auto-saved ${formatMoney(savingsAmount)} to ${savingsAccount.name}!`)
+              }
+            }
+          } else {
+            toast.success(editing ? 'Transaction updated' : `${TYPES.find((t) => t.key === type)?.label} saved`)
+          }
+
           queryClient.invalidateQueries()
-          
           onDone()
         },
         onError: (e) =>
@@ -304,6 +338,41 @@ function QuickAdd({
             Note
             <input value={note} maxLength={200} onChange={(e) => setNote(e.target.value)} className={FIELD} />
           </label>
+        </div>
+      )}
+
+      {/* SMART SAVINGS TOGGLE */}
+      {type === 'income' && !editing && (
+        <div className="rounded-xl border border-[#D4A017]/30 bg-[#D4A017]/10 p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <PiggyBank size={18} className="text-[#D4A017]" />
+              <span className="text-sm font-semibold text-[#0B3D2E]">Auto-save to Savings</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAutoSave(!autoSave)}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
+                autoSave ? 'bg-[#1E8E3E]' : 'bg-gray-300'
+              }`}
+            >
+              <span className={`pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform ${autoSave ? 'translate-x-5' : 'translate-x-1'}`} />
+            </button>
+          </div>
+          {autoSave && (
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-xs text-[#6B7280]">Save</span>
+              <input
+                type="number"
+                min="1"
+                max="100"
+                value={autoSavePct}
+                onChange={(e) => setAutoSavePct(Number(e.target.value))}
+                className="w-16 rounded-lg border border-[#CFC8B0] bg-white px-2 py-1 text-center text-sm text-[#1F2937] outline-none focus:border-[#D4A017]"
+              />
+              <span className="text-xs text-[#6B7280]">% of this income</span>
+            </div>
+          )}
         </div>
       )}
 

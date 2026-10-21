@@ -9,6 +9,7 @@ import { DEFAULT_SETTINGS, useSaveSettings, useSettings } from '@/hooks/useSetti
 import { PinSheet, type PinMode } from '@/components/security/PinSheet'
 import { DataSection } from '@/components/settings/DataSection'
 import { InstallRow } from '@/components/pwa/InstallRow'
+import { useProfile, useUpdateProfile } from '@/hooks/useProfile'
 
 const ordinal = (n: number) => { 
   const s = ['th', 'st', 'nd', 'rd']; 
@@ -80,6 +81,10 @@ export default function Settings() {
   const pinOn = usePinEnabled()
   const [pinMode, setPinMode] = useState<PinMode | null>(null)
 
+  // Smart Savings Hooks
+  const { data: profile } = useProfile()
+  const updateProfile = useUpdateProfile()
+
   function update(patch: Partial<typeof settings>, okMsg: string) {
     save.mutate({ ...settings, ...patch }, { 
       onSuccess: () => toast.success(okMsg), 
@@ -96,7 +101,6 @@ export default function Settings() {
     <div className="mx-auto max-w-2xl space-y-4 p-4 pb-28">
       <h1 className="text-base font-semibold text-[#0B3D2E] dark:text-white">Settings</h1>
 
-      {/* New Account Section with Profile */}
       <Section title="Account">
         <LinkRow 
           to="/profile" 
@@ -121,6 +125,44 @@ export default function Settings() {
       <Section title="Manage">
         <LinkRow to="/settings/categories" title="Categories" hint="Add, rename or remove spending and income categories." />
         <LinkRow to="/settings/accounts" title="Accounts" hint="Add, rename or remove accounts." />
+      </Section>
+
+      {/* NEW SMART SAVINGS SECTION */}
+      <Section title="Smart Savings">
+        <Row 
+          title="Auto-save percentage" 
+          hint="Default percentage to move to savings when you add income."
+        >
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min="0"
+              max="100"
+              value={profile?.auto_save_percentage ?? 20}
+              onChange={(e) => {
+                const val = Math.min(100, Math.max(0, Number(e.target.value)))
+                updateProfile.mutate({ auto_save_percentage: val }, {
+                  onSuccess: () => toast.success('Percentage updated'),
+                  onError: () => toast.error('Could not save percentage')
+                })
+              }}
+              className="w-16 rounded-lg border border-[#CFC8B0] bg-white px-2 py-1 text-center text-sm text-[#1F2937] outline-none focus:border-[#D4A017] dark:border-[#243b30] dark:bg-[#0c1b16] dark:text-white"
+            />
+            <span className="text-sm font-bold text-[#6B7280] dark:text-[#A9B8AF]">%</span>
+          </div>
+        </Row>
+        <Row 
+          title="Enable auto-save" 
+          hint="Turn this on to automatically split income when you add it."
+        >
+          <Toggle 
+            checked={profile?.auto_save_enabled ?? false} 
+            onChange={(v) => updateProfile.mutate({ auto_save_enabled: v }, {
+              onSuccess: () => toast.success(v ? 'Auto-save turned on' : 'Auto-save turned off'),
+              onError: () => toast.error('Could not save setting')
+            })} 
+          />
+        </Row>
       </Section>
 
       <Section title="Appearance">

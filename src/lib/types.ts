@@ -14,6 +14,8 @@ export type Profile = {
   needs_pct: number
   wants_pct: number
   savings_pct: number
+  auto_save_percentage: number
+  auto_save_enabled: boolean
 }
 
 export type Account = {

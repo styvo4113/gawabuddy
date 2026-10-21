@@ -10,7 +10,6 @@ import { useMonthTotals } from '@/hooks/useDashboard'
 import { useChartData } from '@/hooks/useChartData'
 import { useSavingsGoals } from '@/hooks/useSavings'
 import { useBudget, summarize } from '@/hooks/useBudget'
-import { useIsDark } from '@/lib/theme'
 import { currentMonthKey, monthBounds } from '@/lib/budgetMath'
 import { formatMoney } from '@/lib/money'
 import { TransactionRow } from '@/components/transactions/TransactionRow'
@@ -18,23 +17,29 @@ import { SpendingDonut } from '@/components/dashboard/SpendingDonut'
 import { QuoteCard } from '@/components/dashboard/QuoteCard'
 import { GrowYourSavings } from '@/components/dashboard/GrowYourSavings'
 
+// ─────────────────────────────────────────────────────────────
+// Savings commitment config
+// ─────────────────────────────────────────────────────────────
+// Percentage of monthly income the user commits to saving.
+// Change this to 0.15 for 15%, or wire it to a user setting later.
+const SAVINGS_RATE = 0.10 // 10%
+
 export default function Dashboard() {
   const { data: profile } = useProfile()
   const [selectedMonthKey, setSelectedMonthKey] = useState(currentMonthKey())
   const { from, to } = monthBounds(selectedMonthKey)
   const first = profile?.full_name.trim().split(' ')[0] || 'there'
-  const dark = useIsDark()
-  
+
   const accounts = useAccounts().data ?? []
   const categories = useCategories().data ?? []
   const recentTxs = useTransactions({ search: '', type: 'all', categoryId: '', accountId: '', from, to }).data?.pages[0]?.slice(0, 5) ?? []
-  
+
   const { data: totals } = useMonthTotals(from, to)
   const { data: realChartData, isLoading: chartLoading } = useChartData()
   const { data: goals } = useSavingsGoals()
   const { lines: budgetLines } = useBudget(selectedMonthKey)
   const chartData = realChartData && realChartData.length > 0 ? realChartData : []
-  
+
   const totalSavings = goals?.reduce((sum, g) => sum + g.saved_cents, 0) ?? 0
   const emergencyGoal = goals?.find(g => g.type === 'emergency')
   const budgetTotal = summarize(budgetLines)
@@ -48,9 +53,24 @@ export default function Dashboard() {
   const textMain = "text-[#1F2937] dark:text-[#F5F8F7]"
   const brightGreen = "text-[#1E8E3E] dark:text-[#4ADE80]"
 
+  // ───────────────────────────────────────────────────────────
+  // CORE MONEY MATH — savings is reserved BEFORE spending
+  // ───────────────────────────────────────────────────────────
   const incomeVal = totals?.income ?? 0
   const spentVal = totals?.spent ?? 0
-  const remainingVal = incomeVal - spentVal
+
+  // How much of this month's income MUST go to savings
+  const reservedForSavings = Math.round(incomeVal * SAVINGS_RATE)
+
+  // What's actually safe to spend after reserving savings
+  const safeToSpend = incomeVal - reservedForSavings
+
+  // True remaining = safe-to-spend minus actual spend
+  // Negative = you ate your savings
+  const remainingVal = safeToSpend - spentVal
+
+  const isOverspending = remainingVal < 0
+  const overspendAmount = Math.abs(remainingVal)
 
   const isOverBudget = budgetTotal.hasBudget && budgetTotal.pct > 100
   const overspentAmount = budgetTotal.spent - budgetTotal.available
@@ -58,11 +78,11 @@ export default function Dashboard() {
   const topCards = [
     { label: 'Total Income', val: incomeVal, icon: Wallet, color: 'text-[#1E8E3E] dark:text-[#4ADE80]', bg: 'bg-[#1E8E3E]/10 dark:bg-[#4ADE80]/10', to: '/transactions' },
     { label: 'Total Spent', val: spentVal, icon: PieChart, color: 'text-[#C0392B]', bg: 'bg-[#C0392B]/10', to: '/transactions' },
-    { label: 'Remaining', val: remainingVal, icon: TrendingUp, color: 'text-[#3B82F6]', bg: 'bg-[#3B82F6]/10', to: '/budgets' },
-    { label: 'Total Savings', val: totalSavings, icon: Target, color: 'text-[#A855F7]', bg: 'bg-[#A855F7]/10', to: '/goals' },
+    { label: 'Safe to Spend', val: safeToSpend, icon: TrendingUp, color: 'text-[#3B82F6]', bg: 'bg-[#3B82F6]/10', to: '/budgets' },
+    { label: 'Remaining', val: remainingVal, icon: Target, color: 'text-[#A855F7]', bg: 'bg-[#A855F7]/10', to: '/goals' },
   ]
 
-  // Custom Tooltip component for the chart
+  // Custom Tooltip component
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -83,10 +103,10 @@ export default function Dashboard() {
   return (
     <div className={`min-h-screen ${bgMain} p-4 md:p-8 font-sans`}>
       <div className="mx-auto flex max-w-7xl flex-col gap-6 lg:flex-row">
-        
+
         {/* MAIN COLUMN */}
         <div className="flex-1 space-y-6">
-          
+
           {/* Header */}
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
             <div>
@@ -97,8 +117,8 @@ export default function Dashboard() {
               <button className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold ${cardBg} ${textMain}`}>
                 {selectedMonthKey.slice(0, 7)} <ChevronDown size={16} />
               </button>
-              
-              <button 
+
+              <button
                 onClick={() => {
                   const fab = document.querySelector('[aria-label="Add"]') as HTMLButtonElement;
                   if (fab) fab.click();
@@ -110,11 +130,26 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* ⚠️ OVERSPEND WARNING BANNER */}
+          {isOverspending && (
+            <div className="flex items-start gap-3 rounded-2xl border border-[#C0392B]/40 bg-[#C0392B]/10 p-4">
+              <AlertTriangle className="mt-0.5 shrink-0 text-[#C0392B]" size={20} />
+              <div>
+                <p className="text-sm font-bold text-[#C0392B]">
+                  You're eating into your savings by {formatMoney(overspendAmount)}.
+                </p>
+                <p className={`mt-1 text-xs ${textMuted}`}>
+                  You committed {formatMoney(reservedForSavings)} ({(SAVINGS_RATE * 100).toFixed(0)}% of income) to savings, which left you {formatMoney(safeToSpend)} safe to spend — but you've spent {formatMoney(spentVal)}.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* 4 Top Cards */}
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {topCards.map((c) => (
-              <Link 
-                key={c.label} 
+              <Link
+                key={c.label}
                 to={c.to}
                 className={`group rounded-2xl p-4 shadow-sm transition-all hover:scale-[1.02] ${cardBg}`}
               >
@@ -123,12 +158,31 @@ export default function Dashboard() {
                   <ArrowRight size={16} className={`${textMuted} transition-transform group-hover:translate-x-1`} />
                 </div>
                 <p className={`mt-3 text-xs font-medium ${textMuted}`}>{c.label}</p>
-                <p className={`text-lg font-bold ${textMain}`}>{formatMoney(c.val)}</p>
+                <p className={`text-lg font-bold ${c.val < 0 ? 'text-[#C0392B]' : textMain}`}>{formatMoney(c.val)}</p>
                 <p className={`mt-1 text-xs font-medium ${textMuted}`}>
-                  {c.label === 'Total Savings' ? 'Across all goals' : 'This month'}
+                  {c.label === 'Safe to Spend'
+                    ? `After ${formatMoney(reservedForSavings)} to savings`
+                    : c.label === 'Remaining'
+                    ? 'Left to spend safely'
+                    : 'This month'}
                 </p>
               </Link>
             ))}
+          </div>
+
+          {/* Savings commitment strip */}
+          <div className={`flex flex-col gap-2 rounded-2xl p-4 shadow-sm md:flex-row md:items-center md:justify-between ${cardBg}`}>
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-[#A855F7]/10 p-2 text-[#A855F7]"><Target size={18} /></div>
+              <div>
+                <p className={`text-xs font-medium ${textMuted}`}>Savings commitment ({(SAVINGS_RATE * 100).toFixed(0)}% of income)</p>
+                <p className={`text-sm font-bold ${textMain}`}>{formatMoney(reservedForSavings)} reserved this month</p>
+              </div>
+            </div>
+            <div className="text-left md:text-right">
+              <p className={`text-xs font-medium ${textMuted}`}>Total saved across all goals</p>
+              <p className={`text-sm font-bold ${brightGreen}`}>{formatMoney(totalSavings)}</p>
+            </div>
           </div>
 
           {/* Monthly Overview Chart */}
@@ -154,11 +208,17 @@ export default function Dashboard() {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#EFEAD8" vertical={false} />
                     <XAxis dataKey="name" stroke="#6B7280" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#6B7280" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}k`} />
-                    
-                    {/* CUSTOM TOOLTIP */}
+                    <YAxis
+                      stroke="#6B7280"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => {
+                        const shillings = value / 100;
+                        return shillings >= 1000 ? `${Math.round(shillings / 1000)}k` : shillings.toString();
+                      }}
+                    />
                     <Tooltip content={<CustomTooltip />} />
-                    
                     <Area type="monotone" dataKey="income" name="Income" stroke="#1E8E3E" fillOpacity={1} fill="url(#colorIncome)" strokeWidth={2} />
                     <Area type="monotone" dataKey="spending" name="Spending" stroke="#D4A017" fillOpacity={1} fill="url(#colorSpending)" strokeWidth={2} />
                   </AreaChart>
@@ -196,7 +256,7 @@ export default function Dashboard() {
 
         {/* RIGHT SIDEBAR */}
         <div className="w-full space-y-6 lg:w-80">
-          
+
           {/* Small steps widget */}
           <div className={`relative overflow-hidden rounded-2xl p-5 shadow-sm ${cardBg}`}>
             <img src="/mountains.jpg" alt="Mountains" className="absolute inset-0 h-full w-full object-cover opacity-40" />
@@ -207,7 +267,7 @@ export default function Dashboard() {
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#061F1B] to-transparent z-0" />
           </div>
-          
+
           {/* Quick Actions */}
           <div className={`rounded-2xl p-5 shadow-sm ${cardBg}`}>
             <h2 className={`text-sm font-bold ${textMain}`}>Quick Actions</h2>
@@ -218,7 +278,7 @@ export default function Dashboard() {
               <Link to="/goals" className="flex items-center justify-center gap-2 rounded-xl bg-[#A855F7]/10 py-2.5 text-xs font-bold text-[#A855F7]"><Target size={14} /> Save Goal</Link>
             </div>
           </div>
-          
+
           {/* Recent Transactions */}
           <div className={`rounded-2xl p-5 shadow-sm ${cardBg}`}>
             <div className="flex items-center justify-between"><h2 className={`text-sm font-bold ${textMain}`}>Recent Transactions</h2><Link to="/transactions" className={`text-xs font-medium ${brightGreen} hover:underline`}>View all</Link></div>
@@ -228,7 +288,7 @@ export default function Dashboard() {
               )}
             </ul>
           </div>
-          
+
           {/* Grow Your Savings Component */}
           <GrowYourSavings />
 

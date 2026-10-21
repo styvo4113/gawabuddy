@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Minus, Target, Wallet, PieChart, TrendingUp, AlertTriangle } from 'lucide-react'
+import { ArrowRight, Plus, Minus, Target, Wallet, PieChart, TrendingUp, AlertTriangle } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useProfile } from '@/hooks/useProfile'
 import { useTransactions } from '@/hooks/useTransactions'

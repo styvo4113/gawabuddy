@@ -55,7 +55,10 @@ export function useSaveTransaction() {
       const { error } = await supabase.from('transactions').insert(row)
       if (error) throw error
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['accounts'] }),
+    onSuccess: () => {
+      // Invalidate EVERYTHING so the Dashboard, Chart, and Transactions update instantly
+      qc.invalidateQueries()
+    },
   })
 }
 

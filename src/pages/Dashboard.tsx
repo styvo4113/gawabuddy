@@ -62,6 +62,24 @@ export default function Dashboard() {
     { label: 'Total Savings', val: totalSavings, icon: Target, color: 'text-[#A855F7]', bg: 'bg-[#A855F7]/10', to: '/goals' },
   ]
 
+  // Custom Tooltip component for the chart
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className={`rounded-lg border p-3 shadow-lg ${cardBg}`}>
+          <p className={`mb-2 text-sm font-bold ${textMain}`}>{label}</p>
+          {payload.map((entry: any) => (
+            <p key={entry.name} className="flex items-center justify-between gap-4 text-xs font-medium" style={{ color: entry.color }}>
+              <span>{entry.name}</span>
+              <span>{formatMoney(entry.value)}</span>
+            </p>
+          ))}
+        </div>
+      )
+    }
+    return null
+  }
+
   return (
     <div className={`min-h-screen ${bgMain} p-4 md:p-8 font-sans`}>
       <div className="mx-auto flex max-w-7xl flex-col gap-6 lg:flex-row">
@@ -137,17 +155,12 @@ export default function Dashboard() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#EFEAD8" vertical={false} />
                     <XAxis dataKey="name" stroke="#6B7280" fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis stroke="#6B7280" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}k`} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: dark ? '#061F1B' : '#FFFFFF', 
-                        border: dark ? '1px solid #163C35' : '1px solid #EFEAD8', 
-                        borderRadius: '8px',
-                        color: dark ? '#F5F8F7' : '#1F2937'
-                      }} 
-                      itemStyle={{ color: dark ? '#F5F8F7' : '#1F2937' }}
-                    />
-                    <Area type="monotone" dataKey="income" stroke="#1E8E3E" fillOpacity={1} fill="url(#colorIncome)" strokeWidth={2} />
-                    <Area type="monotone" dataKey="spending" stroke="#D4A017" fillOpacity={1} fill="url(#colorSpending)" strokeWidth={2} />
+                    
+                    {/* CUSTOM TOOLTIP */}
+                    <Tooltip content={<CustomTooltip />} />
+                    
+                    <Area type="monotone" dataKey="income" name="Income" stroke="#1E8E3E" fillOpacity={1} fill="url(#colorIncome)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="spending" name="Spending" stroke="#D4A017" fillOpacity={1} fill="url(#colorSpending)" strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
               )}

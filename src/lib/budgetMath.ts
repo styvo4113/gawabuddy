@@ -26,10 +26,18 @@ export const LEVEL_COLOR: Record<Level, string> = {
   over: '#C0392B',
 }
 
-export const monthKey = (d: Date) => 
+let startDay = 1
+export const setMonthStartDay = (n: number) => { 
+  startDay = Math.min(28, Math.max(1, Math.round(n) || 1)) 
+}
+export const getMonthStartDay = () => startDay
+
+const monthKey = (d: Date) => 
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
 
-export const currentMonthKey = () => monthKey(new Date())
+export const currentMonthKey = (now = new Date()) => {
+  return monthKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() - (startDay - 1)))
+}
 
 export function shiftMonth(key: string, delta: number) {
   const [y, m] = key.split('-').map(Number)

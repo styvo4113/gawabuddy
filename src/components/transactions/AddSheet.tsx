@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { MessageSquareText } from 'lucide-react'
 import { toast } from 'sonner'
+import { useQueryClient } from '@tanstack/react-query'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useAccounts } from '@/hooks/useAccounts'
 import { useCategories } from '@/hooks/useCategories'
@@ -20,7 +21,6 @@ type Props = {
   editing?: Transaction | null
 }
 
-const LAST_ACCOUNT = 'gawa-last-account'
 const TYPES: { key: TxType; label: string }[] = [
   { key: 'expense', label: 'Expense' },
   { key: 'income', label: 'Income' },
@@ -71,6 +71,7 @@ function QuickAdd({
   const accountsQuery = useAccounts()
   const categories = useCategories().data ?? []
   const save = useSaveTransaction()
+  const queryClient = useQueryClient()
   
   const accounts = accountsQuery.data ?? []
 
@@ -163,6 +164,10 @@ function QuickAdd({
       {
         onSuccess: () => {
           toast.success(editing ? 'Transaction updated' : `${TYPES.find((t) => t.key === type)?.label} saved`)
+          
+          // THIS IS THE FIX: Force the dashboard and charts to reload instantly
+          queryClient.invalidateQueries()
+          
           onDone()
         },
         onError: (e) =>

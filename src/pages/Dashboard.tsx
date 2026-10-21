@@ -9,6 +9,7 @@ import { useCategories } from '@/hooks/useCategories'
 import { useMonthTotals } from '@/hooks/useDashboard'
 import { useChartData } from '@/hooks/useChartData'
 import { useSavingsGoals } from '@/hooks/useSavings'
+import { useBudget, summarize } from '@/hooks/useBudget'
 import { currentMonthKey, monthBounds } from '@/lib/budgetMath'
 import { formatMoney } from '@/lib/money'
 import { TransactionRow } from '@/components/transactions/TransactionRow'
@@ -28,10 +29,12 @@ export default function Dashboard() {
   const { data: totals } = useMonthTotals(from, to)
   const { data: realChartData, isLoading: chartLoading } = useChartData()
   const { data: goals } = useSavingsGoals()
+  const { lines: budgetLines } = useBudget(selectedMonthKey)
   const chartData = realChartData && realChartData.length > 0 ? realChartData : []
   
-  // Calculate Total Savings dynamically from the goals
   const totalSavings = goals?.reduce((sum, g) => sum + g.saved_cents, 0) ?? 0
+  const emergencyGoal = goals?.find(g => g.type === 'emergency')
+  const budgetTotal = summarize(budgetLines)
 
   const accountName = new Map(accounts.map((a) => [a.id, a.name]))
   const categoryById = new Map(categories.map((c) => [c.id, c]))
@@ -60,21 +63,20 @@ export default function Dashboard() {
               <h1 className={`text-2xl font-bold ${textMain}`}>Hello, {first} 👋</h1>
               <p className={`text-sm ${textMuted}`}>Here's a quick look at your money.</p>
             </div>
-            {/* Quick Add Button */}
             <div className="flex items-center gap-2">
               <button className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold ${cardBg} ${textMain}`}>
                 {selectedMonthKey.slice(0, 7)} <ChevronDown size={16} />
               </button>
               
               <button 
-  onClick={() => {
-    const fab = document.querySelector('[aria-label="Add"]') as HTMLButtonElement;
-    if (fab) fab.click();
-  }}
-  className="hidden md:flex items-center gap-2 rounded-xl bg-[#1E8E3E] dark:bg-[#4ADE80] px-4 py-2 text-sm font-bold text-white dark:text-[#031310] shadow-sm hover:opacity-90"
->
-  <Plus size={16} /> Add
-</button>
+                onClick={() => {
+                  const fab = document.querySelector('[aria-label="Add"]') as HTMLButtonElement;
+                  if (fab) fab.click();
+                }}
+                className="hidden md:flex items-center gap-2 rounded-xl bg-[#1E8E3E] dark:bg-[#4ADE80] px-4 py-2 text-sm font-bold text-white dark:text-[#031310] shadow-sm hover:opacity-90"
+              >
+                <Plus size={16} /> Add
+              </button>
             </div>
           </div>
 
@@ -154,20 +156,30 @@ export default function Dashboard() {
             <div className={`rounded-2xl p-5 shadow-sm ${cardBg} flex flex-col justify-between`}>
               <div>
                 <h2 className={`text-sm font-bold ${textMain}`}>Budget Health</h2>
-                <p className={`mt-2 text-xs ${textMuted}`}>Track your spending limits here.</p>
+                <p className={`mt-2 text-xs ${textMuted}`}>
+                  {budgetTotal.hasBudget 
+                    ? `${formatMoney(budgetTotal.spent)} spent of ${formatMoney(budgetTotal.available)} budgeted`
+                    : 'No budget set for this month.'}
+                </p>
                 <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[#E9E4D4] dark:bg-[#163C35]">
-                  <div className="h-full w-0 rounded-full bg-[#1E8E3E] dark:bg-[#4ADE80]" />
+                  <div className="h-full rounded-full bg-[#1E8E3E] dark:bg-[#4ADE80]" style={{ width: `${Math.min(100, budgetTotal.pct)}%` }} />
                 </div>
-                <p className={`mt-1 text-right text-xs font-bold ${brightGreen}`}>0%</p>
+                <p className={`mt-1 text-right text-xs font-bold ${brightGreen}`}>{Math.floor(budgetTotal.pct)}%</p>
               </div>
               
               <div className="mt-6 flex items-center gap-4">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-[#E9E4D4] dark:border-[#163C35]">
-                  <span className={`text-xs font-bold ${textMuted}`}>0%</span>
+                  <span className={`text-xs font-bold ${textMuted}`}>
+                    {emergencyGoal ? Math.floor((emergencyGoal.saved_cents / emergencyGoal.target_cents) * 100) : 0}%
+                  </span>
                 </div>
                 <div>
                   <p className={`text-sm font-bold ${textMain}`}>Emergency Fund</p>
-                  <p className={`text-xs ${textMuted}`}>KES 0 of KES 0</p>
+                  <p className={`text-xs ${textMuted}`}>
+                    {emergencyGoal 
+                      ? `${formatMoney(emergencyGoal.saved_cents)} of ${formatMoney(emergencyGoal.target_cents)}`
+                      : 'No emergency fund set.'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -245,4 +257,4 @@ export default function Dashboard() {
       </div>
     </div>
   )
-}  
+}

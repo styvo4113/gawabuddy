@@ -20,8 +20,6 @@ import { GrowYourSavings } from '@/components/dashboard/GrowYourSavings'
 // ─────────────────────────────────────────────────────────────
 // Savings commitment config
 // ─────────────────────────────────────────────────────────────
-// Percentage of monthly income the user commits to saving.
-// Change this to 0.15 for 15%, or wire it to a user setting later.
 const SAVINGS_RATE = 0.10 // 10%
 
 export default function Dashboard() {
@@ -66,7 +64,6 @@ export default function Dashboard() {
   const safeToSpend = incomeVal - reservedForSavings
 
   // True remaining = safe-to-spend minus actual spend
-  // Negative = you ate your savings
   const remainingVal = safeToSpend - spentVal
 
   const isOverspending = remainingVal < 0
@@ -78,8 +75,8 @@ export default function Dashboard() {
   const topCards = [
     { label: 'Total Income', val: incomeVal, icon: Wallet, color: 'text-[#1E8E3E] dark:text-[#4ADE80]', bg: 'bg-[#1E8E3E]/10 dark:bg-[#4ADE80]/10', to: '/transactions' },
     { label: 'Total Spent', val: spentVal, icon: PieChart, color: 'text-[#C0392B]', bg: 'bg-[#C0392B]/10', to: '/transactions' },
-    { label: 'Safe to Spend', val: safeToSpend, icon: TrendingUp, color: 'text-[#3B82F6]', bg: 'bg-[#3B82F6]/10', to: '/budgets' },
-    { label: 'Remaining', val: remainingVal, icon: Target, color: 'text-[#A855F7]', bg: 'bg-[#A855F7]/10', to: '/goals' },
+    { label: 'Monthly Limit', val: safeToSpend, icon: TrendingUp, color: 'text-[#3B82F6]', bg: 'bg-[#3B82F6]/10', to: '/budgets' },
+    { label: 'Left to Spend', val: remainingVal, icon: Target, color: 'text-[#A855F7]', bg: 'bg-[#A855F7]/10', to: '/goals' },
   ]
 
   // Custom Tooltip component
@@ -160,10 +157,10 @@ export default function Dashboard() {
                 <p className={`mt-3 text-xs font-medium ${textMuted}`}>{c.label}</p>
                 <p className={`text-lg font-bold ${c.val < 0 ? 'text-[#C0392B]' : textMain}`}>{formatMoney(c.val)}</p>
                 <p className={`mt-1 text-xs font-medium ${textMuted}`}>
-                  {c.label === 'Safe to Spend'
-                    ? `After ${formatMoney(reservedForSavings)} to savings`
-                    : c.label === 'Remaining'
-                    ? 'Left to spend safely'
+                  {c.label === 'Monthly Limit'
+                    ? `Income minus ${formatMoney(reservedForSavings)} savings`
+                    : c.label === 'Left to Spend'
+                    ? 'Available right now'
                     : 'This month'}
                 </p>
               </Link>
@@ -208,6 +205,8 @@ export default function Dashboard() {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#EFEAD8" vertical={false} />
                     <XAxis dataKey="name" stroke="#6B7280" fontSize={12} tickLine={false} axisLine={false} />
+                    
+                    {/* Y-Axis correctly formats 200,000 cents into 2k */}
                     <YAxis
                       stroke="#6B7280"
                       fontSize={12}
@@ -218,6 +217,7 @@ export default function Dashboard() {
                         return shillings >= 1000 ? `${Math.round(shillings / 1000)}k` : shillings.toString();
                       }}
                     />
+                    
                     <Tooltip content={<CustomTooltip />} />
                     <Area type="monotone" dataKey="income" name="Income" stroke="#1E8E3E" fillOpacity={1} fill="url(#colorIncome)" strokeWidth={2} />
                     <Area type="monotone" dataKey="spending" name="Spending" stroke="#D4A017" fillOpacity={1} fill="url(#colorSpending)" strokeWidth={2} />

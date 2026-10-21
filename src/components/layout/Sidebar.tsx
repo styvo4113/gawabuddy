@@ -51,19 +51,19 @@ export function Sidebar() {
         </button>
       </div>
 
-      {/* The Mountain Image Footer */}
-      <div className="relative overflow-hidden rounded-2xl bg-[#0B3D2E] p-6 mt-auto h-48 flex items-end">
+      {/* FULL-SIZE IMAGE EXPERIENCE */}
+      <div className="relative mt-auto h-64 w-full overflow-hidden rounded-2xl border border-[#163C35]">
         <img 
           src="/sidebar-bg.jpg" 
           alt="Journey" 
           className="absolute inset-0 h-full w-full object-cover object-center" 
         />
-        {/* Dark gradient overlay so the text is readable */}
+        {/* This gradient ensures the text is readable while showing the road */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#08130E] via-[#08130E]/40 to-transparent" />
         
-        <div className="relative z-10">
+        <div className="absolute bottom-0 left-0 w-full p-5">
           <p className="text-sm font-medium text-white">Better Money.</p>
-          <p className="text-sm font-bold text-[#4ADE80]">Bigger Dreams.</p>
+          <p className="text-base font-bold text-[#4ADE80]">Bigger Dreams.</p>
         </div>
       </div>
     </aside>

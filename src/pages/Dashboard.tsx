@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Plus, Minus, Target, Wallet, PieChart, TrendingUp, ChevronDown, Leaf, AlertTriangle } from 'lucide-react'
+import { ArrowRight, Plus, Minus, Target, Wallet, PieChart, TrendingUp, ChevronDown, AlertTriangle } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useProfile } from '@/hooks/useProfile'
 import { useTransactions } from '@/hooks/useTransactions'
@@ -15,6 +15,7 @@ import { formatMoney } from '@/lib/money'
 import { TransactionRow } from '@/components/transactions/TransactionRow'
 import { SpendingDonut } from '@/components/dashboard/SpendingDonut'
 import { QuoteCard } from '@/components/dashboard/QuoteCard'
+import { GrowYourSavings } from '@/components/dashboard/GrowYourSavings'
 
 export default function Dashboard() {
   const { data: profile } = useProfile()
@@ -52,7 +53,6 @@ export default function Dashboard() {
   const isOverBudget = budgetTotal.hasBudget && budgetTotal.pct > 100
   const overspentAmount = budgetTotal.spent - budgetTotal.available
 
-  // Define the cards with their destination links
   const topCards = [
     { label: 'Total Income', val: incomeVal, icon: Wallet, color: 'text-[#1E8E3E] dark:text-[#4ADE80]', bg: 'bg-[#1E8E3E]/10 dark:bg-[#4ADE80]/10', to: '/transactions' },
     { label: 'Total Spent', val: spentVal, icon: PieChart, color: 'text-[#C0392B]', bg: 'bg-[#C0392B]/10', to: '/transactions' },
@@ -90,7 +90,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* 4 Top Cards - Now Clickable */}
+          {/* 4 Top Cards */}
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {topCards.map((c) => (
               <Link 
@@ -148,7 +148,6 @@ export default function Dashboard() {
           <div className="grid gap-6 lg:grid-cols-2">
             <div className={`rounded-2xl p-5 shadow-sm ${cardBg}`}><SpendingDonut from={from} to={to} /></div>
 
-            {/* Budget Health - Now Clickable */}
             <Link to="/budgets" className={`group rounded-2xl p-5 shadow-sm transition-all hover:scale-[1.01] ${cardBg} flex flex-col justify-between`}>
               <div>
                 <div className="flex items-center justify-between">
@@ -174,6 +173,8 @@ export default function Dashboard() {
 
         {/* RIGHT SIDEBAR */}
         <div className="w-full space-y-6 lg:w-80">
+          
+          {/* Small steps widget */}
           <div className={`relative overflow-hidden rounded-2xl p-5 shadow-sm ${cardBg}`}>
             <img src="/mountains.jpg" alt="Mountains" className="absolute inset-0 h-full w-full object-cover opacity-40" />
             <div className="relative z-10">
@@ -183,6 +184,8 @@ export default function Dashboard() {
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#061F1B] to-transparent z-0" />
           </div>
+          
+          {/* Quick Actions */}
           <div className={`rounded-2xl p-5 shadow-sm ${cardBg}`}>
             <h2 className={`text-sm font-bold ${textMain}`}>Quick Actions</h2>
             <div className="mt-3 grid grid-cols-2 gap-2">
@@ -192,6 +195,8 @@ export default function Dashboard() {
               <Link to="/goals" className="flex items-center justify-center gap-2 rounded-xl bg-[#A855F7]/10 py-2.5 text-xs font-bold text-[#A855F7]"><Target size={14} /> Save Goal</Link>
             </div>
           </div>
+          
+          {/* Recent Transactions */}
           <div className={`rounded-2xl p-5 shadow-sm ${cardBg}`}>
             <div className="flex items-center justify-between"><h2 className={`text-sm font-bold ${textMain}`}>Recent Transactions</h2><Link to="/transactions" className={`text-xs font-medium ${brightGreen} hover:underline`}>View all</Link></div>
             <ul className="mt-3 divide-y divide-[#F1ECDC] dark:divide-[#163C35]">
@@ -200,9 +205,10 @@ export default function Dashboard() {
               )}
             </ul>
           </div>
-          <div className={`rounded-2xl p-5 shadow-sm ${cardBg}`}>
-            <div className="flex items-center gap-3"><Leaf size={24} className="text-[#1E8E3E] dark:text-[#4ADE80]" /><div><p className={`text-sm font-bold ${textMain}`}>Grow your savings</p><p className={`text-xs ${textMuted}`}>Automate your savings and reach your goals faster.</p></div></div>
-          </div>
+          
+          {/* NEW Grow Your Savings Component */}
+          <GrowYourSavings />
+
           <QuoteCard />
         </div>
       </div>

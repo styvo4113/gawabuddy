@@ -26,15 +26,28 @@ export const LEVEL_COLOR: Record<Level, string> = {
   over: '#C0392B',
 }
 
-// THIS IS THE MISSING EXPORT
+// --- State Management for Month Start ---
 let startDay = 1
 export const setMonthStartDay = (n: number) => { 
   startDay = Math.min(28, Math.max(1, Math.round(n) || 1)) 
 }
 export const getMonthStartDay = () => startDay
 
-const monthKey = (d: Date) => 
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
+// --- Date Helpers ---
+const pad2 = (n: number) => String(n).padStart(2, '0')
+const dayKey = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+const parseDay = (key: string) => { 
+  const [y, m, d] = key.split('-').map(Number)
+  return new Date(y, m - 1, d) 
+}
+const addDays = (key: string, n: number) => { 
+  const d = parseDay(key)
+  d.setDate(d.getDate() + n)
+  return dayKey(d) 
+}
+
+export const monthKey = (d: Date) => 
+  `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-01`
 
 export const currentMonthKey = (now = new Date()) => {
   return monthKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() - (startDay - 1)))
@@ -63,6 +76,29 @@ export function monthsBetween(from: string, to: string) {
   return out
 }
 
+// --- THIS IS THE FIX: Restored monthBounds ---
+export function monthBounds(key: string) {
+  return { 
+    from: addDays(key, startDay - 1), 
+    to: addDays(shiftMonth(key, 1), startDay - 1) 
+  }
+}
+
+export function periodLabel(key: string) {
+  if (startDay === 1) return monthLabel(key)
+  const { from, to } = monthBounds(key)
+  const start = parseDay(from)
+  const end = parseDay(to)
+  end.setDate(end.getDate() - 1)
+  const fmt = (d: Date, withYear: boolean) => d.toLocaleDateString('en-KE', { 
+    day: 'numeric', 
+    month: 'short', 
+    ...(withYear ? { year: 'numeric' } : {}) 
+  })
+  return `${fmt(start, false)} – ${fmt(end, true)}`
+}
+
+// --- Math Helpers ---
 export function usedPct(spent: number, available: number) {
   if (available <= 0) return spent > 0 ? 100 : 0
   return (spent / available) * 100
@@ -80,6 +116,7 @@ export function parseAmountToCents(input: string): number | null {
   return Math.round(n * 100)
 }
 
+// --- Plan Builder ---
 export type PlanLine = { categoryId: string; group: GroupKey; cents: number }
 
 export function buildPlan(
@@ -88,12 +125,7 @@ export function buildPlan(
 ) {
   const lines: PlanLine[] = []
   const groupTotals: Record<GroupKey, number> = {
-    needs: 0,
-    wants: 0,
-    savings: 0,
-    debt: 0,
-    tithe: 0,
-    emergency: 0,
+    needs: 0, wants: 0, savings: 0, debt: 0, tithe: 0, emergency: 0,
   }
   let allocated = 0
 

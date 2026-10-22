@@ -25,14 +25,16 @@ export function useCompleteOnboarding() {
         })
         .eq('user_id', user.id)
 
-      if (profileError) throw new Error(`Profile error: ${profileError.message}`)
+      if (profileError) {
+        window.alert(`Profile Error: ${profileError.message}`)
+        throw new Error(profileError.message)
+      }
 
       // 2. Create Accounts
       let firstAccountId = null
       let totalBalance = 0
 
       for (const acc of p.accounts) {
-        // Force safe conversion to number, defaulting to 0
         const safeBalance = Number(acc.balance) || 0
         totalBalance += safeBalance
 
@@ -47,14 +49,16 @@ export function useCompleteOnboarding() {
           .select('id')
           .single()
 
-        if (accError) throw new Error(`Account error: ${accError.message}`)
+        if (accError) {
+          window.alert(`Account Error: ${accError.message}`)
+          throw new Error(accError.message)
+        }
         if (!firstAccountId) firstAccountId = newAcc.id
       }
 
       // 3. Create Opening Balance Transaction
       if (totalBalance > 0 && firstAccountId) {
-        // Find or create income category
-        let { data: categories } = await supabase
+        let { data: categories, error: catFetchError } = await supabase
           .from('categories')
           .select('id')
           .eq('user_id', user.id)
@@ -68,11 +72,15 @@ export function useCompleteOnboarding() {
             .insert({ user_id: user.id, name: 'Salary', type: 'income', icon: 'Wallet', color: '#1E8E3E' })
             .select('id')
             .single()
-          if (catError) throw new Error(`Category error: ${catError.message}`)
+          
+          if (catError) {
+            window.alert(`Category Error: ${catError.message}`)
+            throw new Error(catError.message)
+          }
           categoryId = newCat.id
         }
 
-        // Insert Transaction
+        // THE CRITICAL TEST
         const { error: txError } = await supabase
           .from('transactions')
           .insert({
@@ -80,12 +88,16 @@ export function useCompleteOnboarding() {
             account_id: firstAccountId,
             category_id: categoryId,
             type: 'income',
-            amount: totalBalance,
+            amount: totalBalance, // Using amount
             date: new Date().toISOString().split('T')[0],
-            note: 'Opening Balance',
+            note: 'Opening Balance', // Using note
           })
 
-        if (txError) throw new Error(`Transaction error: ${txError.message}`)
+        if (txError) {
+          // THIS WILL POP UP AND TELL US EXACTLY WHAT IS WRONG
+          window.alert(`TRANSACTION ERROR: ${txError.message}`)
+          throw new Error(txError.message)
+        }
       }
     },
     onSuccess: async () => {

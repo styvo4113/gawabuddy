@@ -9,6 +9,9 @@ export function useCompleteOnboarding() {
   
   return useMutation({
     mutationFn: async (p: Payload) => {
+      // THIS ALERT PROVES THE NEW CODE IS RUNNING
+      window.alert("NEW CODE IS RUNNING!");
+
       // 1. Get the user
       const { data: { user }, error: userError } = await supabase.auth.getUser()
       if (userError || !user) throw new Error("Not logged in")
@@ -36,7 +39,6 @@ export function useCompleteOnboarding() {
         const safeBalance = Number(acc.balance) || 0
         totalBalance += safeBalance
 
-        // SAFETY: Ensure type is lowercase and a valid string
         const safeType = (acc.type || 'cash').toLowerCase()
 
         const { data: newAcc, error: accError } = await supabase
@@ -56,7 +58,6 @@ export function useCompleteOnboarding() {
 
       // 4. Create Opening Balance Transaction
       if (totalBalance > 0 && firstAccountId) {
-        // Get or create income category
         let { data: categories } = await supabase
           .from('categories')
           .select('id')
@@ -75,7 +76,6 @@ export function useCompleteOnboarding() {
           categoryId = newCat.id
         }
 
-        // Insert Transaction
         const { error: txError } = await supabase
           .from('transactions')
           .insert({

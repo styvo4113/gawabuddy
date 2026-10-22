@@ -1,35 +1,28 @@
 import { useState, useRef, useEffect } from 'react'
-import { useProfile, useUpdateProfile } from '@/hooks/useProfile'
+import { useProfile } from '@/hooks/useProfile'
 import { toast } from 'sonner'
 import { Save, User, Camera, Mail } from 'lucide-react'
 import DeleteAccountSection from '@/components/settings/DeleteAccountSection'
 import { supabase } from '@/lib/supabase'
 
 export default function Profile() {
-  const { data: profile, isLoading } = useProfile()
-  const updateProfile = useUpdateProfile()
+  const { data: profile, isLoading, refetch } = useProfile()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [fullName, setFullName] = useState(profile?.full_name ?? '')
   const [uploading, setUploading] = useState(false)
+  const [savingName, setSavingName] = useState(false)
   const [authEmail, setAuthEmail] = useState<string>('Loading...')
 
-  // Fetch the email from the active session on load
+  // Fetch the email from the active session
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user?.email) {
-        setAuthEmail(session.user.email)
-      } else {
-        setAuthEmail('No email found')
-      }
+      setAuthEmail(session?.user?.email || 'No email found')
     })
   }, [])
 
-  // Update name state if profile loads after initial render
   useEffect(() => {
-    if (profile?.full_name) {
-      setFullName(profile.full_name)
-    }
+    if (profile?.full_name) setFullName(profile.full_name)
   }, [profile?.full_name])
 
   // Handle Image Upload
@@ -40,49 +33,69 @@ export default function Profile() {
 
       const file = e.target.files[0]
       const fileExt = file.name.split('.').pop()
-      const fileName = `${profile?.id}-${Math.random()}.${fileExt}`
-      const filePath = `${fileName}`
+      const fileName = `${profile?.id}-${Date.now()}.${fileExt}`
 
-      // 1. Upload to Supabase Storage
+      // 1. Upload to Storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file)
+        .upload(fileName, file, { upsert: true })
 
       if (uploadError) throw uploadError
 
-      // 2. Get the public URL
+      // 2. Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
-        .getPublicUrl(filePath)
+        .getPublicUrl(fileName)
 
-      // 3. Save the URL to the user's profile with detailed error logging
-      updateProfile.mutate(
-        { avatar_url: publicUrl },
-        {
-          onSuccess: () => toast.success('Profile photo updated!'),
-          onError: (err: any) => {
-            console.error("Database update error:", err)
-            toast.error('Failed to save photo URL: ' + (err?.message || 'Unknown error'))
-          },
+      // 3. Save directly to database
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error("Not logged in")
+
+      const { error: dbError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id)
+
+      if (dbError) {
+        // If the column is missing, this gives a clear error
+        if (dbError.message.includes("column") && dbError.message.includes("does not exist")) {
+           throw new Error("Database missing 'avatar_url' column. Please add it in Supabase Table Editor.")
         }
-      )
+        throw dbError
+      }
+
+      toast.success('Profile photo updated!')
+      refetch() // Refresh to show image
+
     } catch (error: any) {
       console.error("Upload error:", error)
-      toast.error('Error uploading image: ' + error.message)
+      toast.error(error.message)
     } finally {
       setUploading(false)
     }
   }
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSaveName = async (e: React.FormEvent) => {
     e.preventDefault()
-    updateProfile.mutate(
-      { full_name: fullName },
-      {
-        onSuccess: () => toast.success('Profile updated successfully'),
-        onError: () => toast.error('Could not update profile'),
-      }
-    )
+    setSavingName(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error("Not logged in")
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ full_name: fullName })
+        .eq('id', user.id)
+
+      if (error) throw error
+      
+      toast.success('Name updated successfully')
+      refetch()
+    } catch (err: any) {
+      toast.error('Failed to update name: ' + err.message)
+    } finally {
+      setSavingName(false)
+    }
   }
 
   if (isLoading) {
@@ -107,7 +120,7 @@ export default function Profile() {
       </div>
 
       <section className="rounded-2xl border border-[#EFEAD8] bg-white p-6 shadow-sm dark:border-[#243b30] dark:bg-[#14291f]">
-        <form onSubmit={handleSave} className="space-y-6">
+        <form onSubmit={handleSaveName} className="space-y-6">
           
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
             <div 
@@ -170,18 +183,15 @@ export default function Profile() {
                 className="w-full rounded-lg border border-[#EFEAD8] bg-[#F8F5EC] py-2 pl-10 pr-3 text-sm text-[#6B7280] outline-none dark:border-[#243b30] dark:bg-[#0c1b16] dark:text-[#A9B8AF] cursor-not-allowed"
               />
             </div>
-            <p className="mt-1 text-xs text-[#6B7280] dark:text-[#A9B8AF]">
-              Your email is used for login and cannot be changed here.
-            </p>
           </div>
 
           <button
             type="submit"
-            disabled={updateProfile.isPending || uploading}
+            disabled={savingName || uploading}
             className="flex items-center gap-2 rounded-xl bg-[#0B3D2E] px-4 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-[#4ADE80] dark:text-[#031310]"
           >
             <Save size={16} />
-            {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
+            {savingName ? 'Saving...' : 'Save Changes'}
           </button>
         </form>
       </section>

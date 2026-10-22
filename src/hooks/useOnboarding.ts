@@ -9,8 +9,7 @@ export function useCompleteOnboarding() {
   
   return useMutation({
     mutationFn: async (p: Payload) => {
-      // THIS ALERT PROVES THE NEW CODE IS RUNNING
-      window.alert("NEW CODE IS RUNNING!");
+      window.alert("1. STARTING ONBOARDING");
 
       // 1. Get the user
       const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -29,7 +28,10 @@ export function useCompleteOnboarding() {
         })
         .eq('user_id', user.id)
 
-      if (profileError) throw new Error(`Profile error: ${profileError.message}`)
+      if (profileError) {
+        window.alert(`PROFILE ERROR: ${profileError.message}`);
+        throw new Error(`Profile error: ${profileError.message}`)
+      }
 
       // 3. Create Accounts
       let firstAccountId = null
@@ -52,9 +54,14 @@ export function useCompleteOnboarding() {
           .select('id')
           .single()
 
-        if (accError) throw new Error(`Account error: ${accError.message}`)
+        if (accError) {
+          window.alert(`ACCOUNT ERROR: ${accError.message}`);
+          throw new Error(`Account error: ${accError.message}`)
+        }
         if (!firstAccountId) firstAccountId = newAcc.id
       }
+
+      window.alert(`2. ACCOUNTS SAVED. TOTAL: ${totalBalance}`);
 
       // 4. Create Opening Balance Transaction
       if (totalBalance > 0 && firstAccountId) {
@@ -72,9 +79,15 @@ export function useCompleteOnboarding() {
             .insert({ user_id: user.id, name: 'Salary', type: 'income', icon: 'Wallet', color: '#1E8E3E' })
             .select('id')
             .single()
-          if (catError) throw new Error(`Category error: ${catError.message}`)
+          
+          if (catError) {
+            window.alert(`CATEGORY ERROR: ${catError.message}`);
+            throw new Error(`Category error: ${catError.message}`)
+          }
           categoryId = newCat.id
         }
+
+        window.alert(`3. TRYING TO SAVE TRANSACTION...`);
 
         const { error: txError } = await supabase
           .from('transactions')
@@ -88,7 +101,14 @@ export function useCompleteOnboarding() {
             note: 'Opening Balance',
           })
 
-        if (txError) throw new Error(`Transaction error: ${txError.message}`)
+        if (txError) {
+          window.alert(`TRANSACTION ERROR: ${txError.message}`);
+          throw new Error(`Transaction error: ${txError.message}`)
+        }
+        
+        window.alert("4. TRANSACTION SAVED SUCCESSFULLY!");
+      } else {
+        window.alert("4. SKIPPED TRANSACTION - NO BALANCE ENTERED");
       }
     },
     onSuccess: async () => {

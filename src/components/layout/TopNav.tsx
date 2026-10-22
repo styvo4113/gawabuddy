@@ -33,11 +33,13 @@ export function TopNav() {
     <>
       <header className="sticky top-0 z-40 flex items-center justify-between bg-[#F8F5EC]/90 px-4 py-3 backdrop-blur-md dark:bg-[#031310]/90 md:pl-4">
         
-        {/* Left Side: Profile Image goes to Home, Name + Arrow goes to Profile */}
         <div className="flex items-center gap-2">
           
-          {/* Image goes to Home ('/') */}
-          <Link to="/" className="active:scale-95 transition-transform">
+          {/* 1. IMAGE OPENS THE MENU */}
+          <button 
+            onClick={() => setOpen(true)} 
+            className="active:scale-95 transition-transform"
+          >
             {profile?.avatar_url ? (
               <img 
                 src={profile.avatar_url} 
@@ -49,16 +51,16 @@ export function TopNav() {
                 {profile?.full_name?.[0]?.toUpperCase() || 'S'}
               </div>
             )}
-          </Link>
+          </button>
 
-          {/* Name + Arrow goes to Profile ('/profile') */}
-          <Link to="/profile" className="flex items-center gap-1 active:scale-95 transition-transform">
+          {/* 2. GAWABUDDY + ARROW GOES TO DASHBOARD */}
+          <Link to="/" className="flex items-center gap-1 active:scale-95 transition-transform">
             <span className="text-lg font-bold text-[#0B3D2E] dark:text-[#f1ecdc]">GawaBuddy</span>
             <ChevronRight size={18} className="text-[#6B7280] dark:text-[#A9B8AF]" />
           </Link>
         </div>
 
-        {/* Right Side: Menu Button (Opens drawer) */}
+        {/* Right Side: Menu Button (Optional backup trigger) */}
         <button onClick={() => setOpen(true)} className="rounded-lg p-2 text-[#6B7280] hover:bg-[#EFEAD8] dark:text-[#A9B8AF] dark:hover:bg-[#163C35]">
           <MoreHorizontal size={24} />
         </button>

@@ -21,6 +21,7 @@ export type Profile = {
   split_savings_pct: number
   split_tithe_pct: number
   split_emergency_pct: number
+  avatar_url?: string | null // <--- THIS IS THE FIX
 }
 
 export type Account = {

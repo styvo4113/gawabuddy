@@ -12,11 +12,9 @@ export default function Profile() {
 
   const [fullName, setFullName] = useState(profile?.full_name ?? '')
   const [uploading, setUploading] = useState(false)
-  
-  // NEW: State to hold the email from Supabase Auth
   const [authEmail, setAuthEmail] = useState<string>('Loading...')
 
-  // NEW: Fetch the email from the active session on load
+  // Fetch the email from the active session on load
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user?.email) {
@@ -45,24 +43,31 @@ export default function Profile() {
       const fileName = `${profile?.id}-${Math.random()}.${fileExt}`
       const filePath = `${fileName}`
 
+      // 1. Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file)
 
       if (uploadError) throw uploadError
 
+      // 2. Get the public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath)
 
+      // 3. Save the URL to the user's profile with detailed error logging
       updateProfile.mutate(
         { avatar_url: publicUrl },
         {
           onSuccess: () => toast.success('Profile photo updated!'),
-          onError: () => toast.error('Failed to save photo URL.'),
+          onError: (err: any) => {
+            console.error("Database update error:", err)
+            toast.error('Failed to save photo URL: ' + (err?.message || 'Unknown error'))
+          },
         }
       )
     } catch (error: any) {
+      console.error("Upload error:", error)
       toast.error('Error uploading image: ' + error.message)
     } finally {
       setUploading(false)
@@ -152,7 +157,6 @@ export default function Profile() {
             />
           </div>
 
-          {/* UPDATED EMAIL FIELD */}
           <div>
             <label className="block text-sm font-medium text-[#1F2937] dark:text-white mb-1">
               Email Address

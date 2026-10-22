@@ -93,6 +93,7 @@ export function useCompleteOnboarding() {
             note: 'Opening Balance', // Using note
           })
 
+          window.alert("I HAVE REACHED THE TRANSACTION STEP");
         if (txError) {
           // THIS WILL POP UP AND TELL US EXACTLY WHAT IS WRONG
           window.alert(`TRANSACTION ERROR: ${txError.message}`)

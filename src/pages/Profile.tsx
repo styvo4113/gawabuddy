@@ -31,37 +31,40 @@ export default function Profile() {
 
       const file = e.target.files[0]
       const fileExt = file.name.split('.').pop()
-      // Create a unique file name
-      const fileName = `${profile?.user_id}-${Date.now()}.${fileExt}`
+      const fileName = `avatar-${Date.now()}.${fileExt}`
 
       // 1. Upload to Storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(fileName, file, { upsert: true })
 
-      if (uploadError) throw uploadError
+      if (uploadError) throw new Error(`Storage error: ${uploadError.message}`)
 
       // 2. Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(fileName)
 
-      // 3. Save directly to database (USING USER_ID)
+      // 3. Save directly to database
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error("Not logged in")
 
+      // Use upsert to guarantee the row exists and is updated
       const { error: dbError } = await supabase
         .from('profiles')
-        .update({ avatar_url: publicUrl })
-        .eq('user_id', user.id) // <--- FIXED: Changed 'id' to 'user_id'
+        .upsert({ 
+          user_id: user.id, 
+          avatar_url: publicUrl,
+          full_name: fullName || user.email?.split('@')[0] || 'User'
+        }, { onConflict: 'user_id' })
 
-      if (dbError) throw dbError
+      if (dbError) throw new Error(`Database error: ${dbError.message}`)
 
-      toast.success('Profile photo updated!')
+      toast.success('Profile photo updated successfully!')
       refetch() 
 
     } catch (error: any) {
-      console.error("Upload error:", error)
+      console.error("Upload error details:", error)
       toast.error(error.message)
     } finally {
       setUploading(false)
@@ -75,10 +78,13 @@ export default function Profile() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error("Not logged in")
 
+      // Use upsert for names too
       const { error } = await supabase
         .from('profiles')
-        .update({ full_name: fullName })
-        .eq('user_id', user.id) // <--- FIXED: Changed 'id' to 'user_id'
+        .upsert({ 
+          user_id: user.id, 
+          full_name: fullName 
+        }, { onConflict: 'user_id' })
 
       if (error) throw error
       

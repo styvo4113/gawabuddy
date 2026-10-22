@@ -31,7 +31,8 @@ export default function Profile() {
 
       const file = e.target.files[0]
       const fileExt = file.name.split('.').pop()
-      const fileName = `${profile?.id}-${Date.now()}.${fileExt}`
+      // Create a unique file name
+      const fileName = `${profile?.user_id}-${Date.now()}.${fileExt}`
 
       // 1. Upload to Storage
       const { error: uploadError } = await supabase.storage
@@ -45,21 +46,16 @@ export default function Profile() {
         .from('avatars')
         .getPublicUrl(fileName)
 
-      // 3. Save directly to database
+      // 3. Save directly to database (USING USER_ID)
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error("Not logged in")
 
       const { error: dbError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
-        .eq('id', user.id)
+        .eq('user_id', user.id) // <--- FIXED: Changed 'id' to 'user_id'
 
-      if (dbError) {
-        if (dbError.message.includes("column") && dbError.message.includes("does not exist")) {
-           throw new Error("Database missing 'avatar_url' column. Please add it in Supabase Table Editor.")
-        }
-        throw dbError
-      }
+      if (dbError) throw dbError
 
       toast.success('Profile photo updated!')
       refetch() 
@@ -82,7 +78,7 @@ export default function Profile() {
       const { error } = await supabase
         .from('profiles')
         .update({ full_name: fullName })
-        .eq('id', user.id)
+        .eq('user_id', user.id) // <--- FIXED: Changed 'id' to 'user_id'
 
       if (error) throw error
       

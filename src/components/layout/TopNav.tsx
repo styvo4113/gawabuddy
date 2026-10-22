@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Receipt, PieChart, Target, MoreHorizontal, LogOut, Settings, X, Compass, CalendarClock, BarChart3 } from 'lucide-react'
 import { toast } from 'sonner'
-import { Avatar } from '@/components/app/Avatar'
 import { useAuth } from '@/context/AuthContext'
+import { useProfile } from '@/hooks/useProfile' // ADDED IMPORT
 import { signOut } from '@/lib/auth'
 
 const MENU = [
@@ -21,6 +21,7 @@ export function TopNav() {
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { data: profile } = useProfile() // ADDED PROFILE HOOK
 
   async function handleSignOut() {
     await signOut()
@@ -32,7 +33,22 @@ export function TopNav() {
     <>
       <header className="sticky top-0 z-40 flex items-center justify-between bg-[#F8F5EC]/90 px-4 py-3 backdrop-blur-md dark:bg-[#031310]/90 md:pl-4">
         <button onClick={() => setOpen(true)} className="flex items-center gap-2 active:scale-95 transition-transform">
-          <Avatar size={40} />
+          
+          {/* REPLACED <Avatar /> WITH DIRECT IMAGE LOGIC */}
+          <Link to="/profile" onClick={(e) => e.stopPropagation()}>
+            {profile?.avatar_url ? (
+              <img 
+                src={profile.avatar_url} 
+                alt="Profile" 
+                className="h-10 w-10 rounded-full object-cover border-2 border-[#EFEAD8] dark:border-[#243b30]" 
+              />
+            ) : (
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1E8E3E] text-sm font-bold text-white dark:bg-[#4ADE80] dark:text-[#031310]">
+                {profile?.full_name?.[0]?.toUpperCase() || 'S'}
+              </div>
+            )}
+          </Link>
+
           <span className="text-lg font-bold text-[#0B3D2E] dark:text-[#f1ecdc]">GawaBuddy</span>
         </button>
       </header>
@@ -41,9 +57,23 @@ export function TopNav() {
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)}>
           <div className="absolute left-4 top-4 w-64 overflow-hidden rounded-3xl bg-white shadow-xl dark:bg-[#14291f]" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#F1ECDC] p-4 dark:border-[#243b30]">
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-[#1F2937] dark:text-white">My Account</p>
-                <p className="truncate text-xs text-[#6B7280] dark:text-[#A9B8AF]">{user?.email}</p>
+              <div className="min-w-0 flex items-center gap-3">
+                {/* ADDED PROFILE IMAGE INSIDE THE DRAWER MENU AS WELL */}
+                {profile?.avatar_url ? (
+                  <img 
+                    src={profile.avatar_url} 
+                    alt="Profile" 
+                    className="h-10 w-10 rounded-full object-cover border border-[#EFEAD8] dark:border-[#243b30]" 
+                  />
+                ) : (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1E8E3E] text-sm font-bold text-white dark:bg-[#4ADE80] dark:text-[#031310]">
+                    {profile?.full_name?.[0]?.toUpperCase() || 'S'}
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm font-bold text-[#1F2937] dark:text-white">My Account</p>
+                  <p className="truncate text-xs text-[#6B7280] dark:text-[#A9B8AF]">{user?.email}</p>
+                </div>
               </div>
               <button onClick={() => setOpen(false)} className="rounded-full p-1 hover:bg-[#F1ECDC] dark:hover:bg-[#243b30]"><X size={20} className="text-[#6B7280] dark:text-[#A9B8AF]" /></button>
             </div>

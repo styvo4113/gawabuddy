@@ -45,8 +45,10 @@ export default function AppShell() {
             </main>
           </div>
 
-          {/* Floating Add Button (Mobile only) */}
-          <FloatingAddButton onClick={() => setMenuOpen(true)} />
+          {/* Floating Add Button (MOBILE ONLY) */}
+          <div className="md:hidden">
+            <FloatingAddButton onClick={() => setMenuOpen(true)} />
+          </div>
           
           <AddMenuSheet open={menuOpen} onOpenChange={setMenuOpen} onPick={(type: AddType) => {
             setMenuOpen(false)

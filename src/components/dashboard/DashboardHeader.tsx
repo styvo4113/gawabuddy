@@ -56,18 +56,20 @@ export default function DashboardHeader({ selectedMonthKey, onMonthClick }: Dash
           <ChevronDown size={16} className="opacity-70" />
         </button>
 
-        {/* Add Transaction Button (Wired to your FAB) */}
-        <button 
-          className="add-button" 
-          type="button"
-          onClick={() => {
-            const fab = document.querySelector('[aria-label="Add"]') as HTMLButtonElement;
-            if (fab) fab.click();
-          }}
-        >
-          <Plus size={18} strokeWidth={3} />
-          Add
-        </button>
+        {/* Add Button - Wrapped in a Tailwind div to hide on mobile */}
+        <div className="hidden md:flex">
+          <button 
+            className="add-button" 
+            type="button"
+            onClick={() => {
+              const fab = document.querySelector('[aria-label="Add"]') as HTMLButtonElement;
+              if (fab) fab.click();
+            }}
+          >
+            <Plus size={18} strokeWidth={3} />
+            Add
+          </button>
+        </div>
       </div>
     </header>
   )

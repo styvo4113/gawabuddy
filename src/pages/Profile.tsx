@@ -33,30 +33,23 @@ export default function Profile() {
       const fileExt = file.name.split('.').pop()
       const fileName = `avatar-${Date.now()}.${fileExt}`
 
-      // 1. Upload to Storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(fileName, file, { upsert: true })
 
       if (uploadError) throw new Error(`Storage error: ${uploadError.message}`)
 
-      // 2. Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(fileName)
 
-      // 3. Save directly to database
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error("Not logged in")
 
-      // Use upsert to guarantee the row exists and is updated
       const { error: dbError } = await supabase
         .from('profiles')
-        .upsert({ 
-          user_id: user.id, 
-          avatar_url: publicUrl,
-          full_name: fullName || user.email?.split('@')[0] || 'User'
-        }, { onConflict: 'user_id' })
+        .update({ avatar_url: publicUrl })
+        .eq('user_id', user.id)
 
       if (dbError) throw new Error(`Database error: ${dbError.message}`)
 
@@ -78,13 +71,10 @@ export default function Profile() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error("Not logged in")
 
-      // Use upsert for names too
       const { error } = await supabase
         .from('profiles')
-        .upsert({ 
-          user_id: user.id, 
-          full_name: fullName 
-        }, { onConflict: 'user_id' })
+        .update({ full_name: fullName })
+        .eq('user_id', user.id)
 
       if (error) throw error
       
@@ -108,10 +98,19 @@ export default function Profile() {
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 pb-28">
       
+      {/* HEADER WITH IMAGE */}
       <div className="flex items-center gap-3">
-        <div className="rounded-full bg-[#0B3D2E]/10 p-3 text-[#0B3D2E] dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]">
-          <User size={24} />
-        </div>
+        {profile?.avatar_url ? (
+          <img 
+            src={profile.avatar_url} 
+            alt="Profile" 
+            className="h-12 w-12 rounded-full object-cover border-2 border-[#EFEAD8] dark:border-[#243b30]" 
+          />
+        ) : (
+          <div className="rounded-full bg-[#0B3D2E]/10 p-3 text-[#0B3D2E] dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]">
+            <User size={24} />
+          </div>
+        )}
         <div>
           <h1 className="text-xl font-bold text-[#0B3D2E] dark:text-white">Your Profile</h1>
           <p className="text-sm text-[#6B7280] dark:text-[#A9B8AF]">Manage your personal details.</p>

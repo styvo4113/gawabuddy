@@ -2,18 +2,38 @@ import { LogOut } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { signOut } from '@/lib/auth'
 import { NAV_ITEMS } from './navItems'
+import { useProfile } from '@/hooks/useProfile'
 
 export function Sidebar() {
+  const { data: profile } = useProfile()
+
   return (
     <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-[#163C35] bg-[#08130E] p-4 md:flex">
       
       {/* Logo Area */}
-      <div className="flex items-center gap-3 px-2 py-6">
-        <img 
-          src="/gawa-logo.png" 
-          alt="Gawa" 
-          className="h-10 w-auto object-contain" 
-        />
+      <div className="flex items-center justify-between px-2 py-6">
+        <div className="flex items-center gap-3">
+          <img 
+            src="/gawa-logo.png" 
+            alt="Gawa" 
+            className="h-10 w-auto object-contain" 
+          />
+        </div>
+
+        {/* Profile Picture in Top Right */}
+        <NavLink to="/profile">
+          {profile?.avatar_url ? (
+            <img 
+              src={profile.avatar_url} 
+              alt="User" 
+              className="h-9 w-9 rounded-full object-cover border border-[#163C35]" 
+            />
+          ) : (
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#4ADE80] text-sm font-bold text-[#031310]">
+              {profile?.full_name?.[0]?.toUpperCase() || 'S'}
+            </div>
+          )}
+        </NavLink>
       </div>
 
       {/* Navigation */}

@@ -38,7 +38,8 @@ export function useCompleteOnboarding() {
       let totalBalance = 0
 
       for (const acc of p.accounts) {
-        const safeBalance = Number(acc.balance) || 0
+        // FIXED: Using acc.opening instead of acc.balance
+        const safeBalance = Number(acc.opening) || 0
         totalBalance += safeBalance
 
         const safeType = (acc.type || 'cash').toLowerCase()

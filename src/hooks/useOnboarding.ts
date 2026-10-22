@@ -30,7 +30,6 @@ export function useCompleteOnboarding() {
       let totalBalance = 0
 
       for (const acc of p.accounts) {
-        // Read the raw number (e.g., 1000)
         const safeBalance = Number(acc.opening_balance) || 0
         totalBalance += safeBalance
 
@@ -70,6 +69,7 @@ export function useCompleteOnboarding() {
           categoryId = newCat.id
         }
 
+        // THE FINAL FIX: Using 'amount_cents' instead of 'amount'
         const { error: txError } = await supabase
           .from('transactions')
           .insert({
@@ -77,7 +77,7 @@ export function useCompleteOnboarding() {
             account_id: firstAccountId,
             category_id: categoryId,
             type: 'income',
-            amount: totalBalance, // Using raw amount (1000)
+            amount_cents: totalBalance * 100, // Convert 1000 to 100000 cents
             date: new Date().toISOString().split('T')[0],
             note: 'Opening Balance',
           })

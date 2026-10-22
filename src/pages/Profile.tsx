@@ -14,7 +14,6 @@ export default function Profile() {
   const [savingName, setSavingName] = useState(false)
   const [authEmail, setAuthEmail] = useState<string>('Loading...')
 
-  // Fetch the email from the active session
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setAuthEmail(session?.user?.email || 'No email found')
@@ -25,7 +24,6 @@ export default function Profile() {
     if (profile?.full_name) setFullName(profile.full_name)
   }, [profile?.full_name])
 
-  // Handle Image Upload
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
       setUploading(true)
@@ -57,7 +55,6 @@ export default function Profile() {
         .eq('id', user.id)
 
       if (dbError) {
-        // If the column is missing, this gives a clear error
         if (dbError.message.includes("column") && dbError.message.includes("does not exist")) {
            throw new Error("Database missing 'avatar_url' column. Please add it in Supabase Table Editor.")
         }
@@ -65,7 +62,7 @@ export default function Profile() {
       }
 
       toast.success('Profile photo updated!')
-      refetch() // Refresh to show image
+      refetch() 
 
     } catch (error: any) {
       console.error("Upload error:", error)

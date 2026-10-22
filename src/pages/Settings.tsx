@@ -258,11 +258,11 @@ export default function Settings() {
 
       <DataSection />
 
-      {/* DANGER ZONE - Added Delete Account here */}
+      {/* DANGER ZONE - Added Delete Account here
       <section className="pt-4">
         <h2 className="mb-3 px-2 text-sm font-semibold text-[#C0392B]">Danger Zone</h2>
         <DeleteAccountSection />
-      </section>
+      </section> */}
 
       <PinSheet mode={pinMode} onOpenChange={(o) => !o && setPinMode(null)} />
     </div>

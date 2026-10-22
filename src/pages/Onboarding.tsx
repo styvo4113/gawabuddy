@@ -36,12 +36,12 @@ export default function Onboarding() {
   }
 
   function finish() {
-    const cleanDraft = { ...draft, template: '50_30_20' as const, needs: '50', wants: '30', savings: '20' }
-    const problem = validate(step, cleanDraft)
+    // REMOVED THE HARDCODED 50/30/20 SPLIT
+    const problem = validate(step, draft)
     if (problem) return setError(problem)
     setError('')
     
-    complete.mutate(toPayload(cleanDraft), {
+    complete.mutate(toPayload(draft), {
       onSuccess: () => {
         toast.success('You are all set. Welcome to Gawa App!')
         navigate('/', { replace: true })

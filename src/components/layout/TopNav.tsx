@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Receipt, PieChart, Target, MoreHorizontal, LogOut, Settings, X, Compass, CalendarClock, BarChart3 } from 'lucide-react'
+import { LayoutDashboard, Receipt, PieChart, Target, MoreHorizontal, LogOut, Settings, X, Compass, CalendarClock, BarChart3, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
-import { useProfile } from '@/hooks/useProfile' // ADDED IMPORT
+import { useProfile } from '@/hooks/useProfile'
 import { signOut } from '@/lib/auth'
 
 const MENU = [
@@ -21,7 +21,7 @@ export function TopNav() {
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { data: profile } = useProfile() // ADDED PROFILE HOOK
+  const { data: profile } = useProfile()
 
   async function handleSignOut() {
     await signOut()
@@ -32,10 +32,12 @@ export function TopNav() {
   return (
     <>
       <header className="sticky top-0 z-40 flex items-center justify-between bg-[#F8F5EC]/90 px-4 py-3 backdrop-blur-md dark:bg-[#031310]/90 md:pl-4">
-        <button onClick={() => setOpen(true)} className="flex items-center gap-2 active:scale-95 transition-transform">
+        
+        {/* Left Side: Profile Image goes to Home, Name + Arrow goes to Profile */}
+        <div className="flex items-center gap-2">
           
-          {/* REPLACED <Avatar /> WITH DIRECT IMAGE LOGIC */}
-          <Link to="/profile" onClick={(e) => e.stopPropagation()}>
+          {/* Image goes to Home ('/') */}
+          <Link to="/" className="active:scale-95 transition-transform">
             {profile?.avatar_url ? (
               <img 
                 src={profile.avatar_url} 
@@ -49,16 +51,25 @@ export function TopNav() {
             )}
           </Link>
 
-          <span className="text-lg font-bold text-[#0B3D2E] dark:text-[#f1ecdc]">GawaBuddy</span>
+          {/* Name + Arrow goes to Profile ('/profile') */}
+          <Link to="/profile" className="flex items-center gap-1 active:scale-95 transition-transform">
+            <span className="text-lg font-bold text-[#0B3D2E] dark:text-[#f1ecdc]">GawaBuddy</span>
+            <ChevronRight size={18} className="text-[#6B7280] dark:text-[#A9B8AF]" />
+          </Link>
+        </div>
+
+        {/* Right Side: Menu Button (Opens drawer) */}
+        <button onClick={() => setOpen(true)} className="rounded-lg p-2 text-[#6B7280] hover:bg-[#EFEAD8] dark:text-[#A9B8AF] dark:hover:bg-[#163C35]">
+          <MoreHorizontal size={24} />
         </button>
       </header>
 
+      {/* Mobile Drawer Menu */}
       {open && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)}>
           <div className="absolute left-4 top-4 w-64 overflow-hidden rounded-3xl bg-white shadow-xl dark:bg-[#14291f]" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#F1ECDC] p-4 dark:border-[#243b30]">
               <div className="min-w-0 flex items-center gap-3">
-                {/* ADDED PROFILE IMAGE INSIDE THE DRAWER MENU AS WELL */}
                 {profile?.avatar_url ? (
                   <img 
                     src={profile.avatar_url} 

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile'
 import { toast } from 'sonner'
 import { Save, User, Camera, Mail } from 'lucide-react'
@@ -12,6 +12,27 @@ export default function Profile() {
 
   const [fullName, setFullName] = useState(profile?.full_name ?? '')
   const [uploading, setUploading] = useState(false)
+  
+  // NEW: State to hold the email from Supabase Auth
+  const [authEmail, setAuthEmail] = useState<string>('Loading...')
+
+  // NEW: Fetch the email from the active session on load
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.email) {
+        setAuthEmail(session.user.email)
+      } else {
+        setAuthEmail('No email found')
+      }
+    })
+  }, [])
+
+  // Update name state if profile loads after initial render
+  useEffect(() => {
+    if (profile?.full_name) {
+      setFullName(profile.full_name)
+    }
+  }, [profile?.full_name])
 
   // Handle Image Upload
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -24,19 +45,16 @@ export default function Profile() {
       const fileName = `${profile?.id}-${Math.random()}.${fileExt}`
       const filePath = `${fileName}`
 
-      // 1. Upload to Supabase Storage (assuming you have an 'avatars' bucket)
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file)
 
       if (uploadError) throw uploadError
 
-      // 2. Get the public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath)
 
-      // 3. Save the URL to the user's profile
       updateProfile.mutate(
         { avatar_url: publicUrl },
         {
@@ -73,7 +91,6 @@ export default function Profile() {
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 pb-28">
       
-      {/* Page Header */}
       <div className="flex items-center gap-3">
         <div className="rounded-full bg-[#0B3D2E]/10 p-3 text-[#0B3D2E] dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]">
           <User size={24} />
@@ -84,11 +101,9 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Profile Form */}
       <section className="rounded-2xl border border-[#EFEAD8] bg-white p-6 shadow-sm dark:border-[#243b30] dark:bg-[#14291f]">
         <form onSubmit={handleSave} className="space-y-6">
           
-          {/* Image Uploader */}
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
             <div 
               className="relative group flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border-4 border-[#EFEAD8] bg-[#F8F5EC] dark:border-[#243b30] dark:bg-[#0c1b16]"
@@ -100,7 +115,6 @@ export default function Profile() {
                 <User size={32} className="text-[#9CA3AF]" />
               )}
               
-              {/* Hover overlay for upload */}
               <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
                 <Camera size={24} className="text-white" />
               </div>
@@ -125,7 +139,6 @@ export default function Profile() {
 
           <div className="border-t border-[#EFEAD8] pt-6 dark:border-[#243b30]" />
 
-          {/* Full Name */}
           <div>
             <label className="block text-sm font-medium text-[#1F2937] dark:text-white mb-1">
               Full Name
@@ -139,7 +152,7 @@ export default function Profile() {
             />
           </div>
 
-          {/* Email Address (Read Only) */}
+          {/* UPDATED EMAIL FIELD */}
           <div>
             <label className="block text-sm font-medium text-[#1F2937] dark:text-white mb-1">
               Email Address
@@ -148,7 +161,7 @@ export default function Profile() {
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" size={16} />
               <input
                 type="email"
-                value={profile?.email ?? 'No email linked'}
+                value={authEmail}
                 disabled
                 className="w-full rounded-lg border border-[#EFEAD8] bg-[#F8F5EC] py-2 pl-10 pr-3 text-sm text-[#6B7280] outline-none dark:border-[#243b30] dark:bg-[#0c1b16] dark:text-[#A9B8AF] cursor-not-allowed"
               />
@@ -169,7 +182,6 @@ export default function Profile() {
         </form>
       </section>
 
-      {/* DANGER ZONE (Delete Account) */}
       <section className="pt-6 mt-6 border-t border-[#EFEAD8] dark:border-[#243b30]">
         <h2 className="mb-3 text-sm font-semibold text-[#C0392B]">Danger Zone</h2>
         <DeleteAccountSection />

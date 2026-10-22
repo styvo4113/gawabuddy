@@ -10,6 +10,7 @@ import { PinSheet, type PinMode } from '@/components/security/PinSheet'
 import { DataSection } from '@/components/settings/DataSection'
 import { InstallRow } from '@/components/pwa/InstallRow'
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile'
+import DeleteAccountSection from '@/components/settings/DeleteAccountSection' // <-- ADDED IMPORT
 
 const ordinal = (n: number) => { 
   const s = ['th', 'st', 'nd', 'rd']; 
@@ -256,6 +257,13 @@ export default function Settings() {
       </Section>
 
       <DataSection />
+
+      {/* DANGER ZONE - Added Delete Account here */}
+      <section className="pt-4">
+        <h2 className="mb-3 px-2 text-sm font-semibold text-[#C0392B]">Danger Zone</h2>
+        <DeleteAccountSection />
+      </section>
+
       <PinSheet mode={pinMode} onOpenChange={(o) => !o && setPinMode(null)} />
     </div>
   )
